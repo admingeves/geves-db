@@ -46,7 +46,7 @@ def show_login_form():
             password = st.text_input("Contraseña", type="password", key='password')
             submit_button = st.form_submit_button(label='Login')
             if submit_button:
-                if username == "admin" and password == "password":
+                if username == "admin" and password == "1111":
                     st.session_state.logged_in = True
                 #st.session_state.username = username
             else:
