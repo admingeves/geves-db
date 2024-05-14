@@ -46,7 +46,7 @@ def show_login_form():
         if submit_button:
             if username == "admin" and password == "password":
                 st.session_state.logged_in = True
-                st.session_state.username = username
+                #st.session_state.username = username
             else:
                 st.error("Usuario/Contraseña incorrecto")
 
