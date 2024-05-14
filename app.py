@@ -39,13 +39,15 @@ st.set_page_config(page_icon='📊', layout='wide', page_title='Dashboard')
 
 # Función para la pantalla de inicio de sesión
 def show_login_form():
-    with st.form(key='login_form'):
-        username = st.text_input("Usuario", key='username')
-        password = st.text_input("Contraseña", type="password", key='password')
-        submit_button = st.form_submit_button(label='Login')
-        if submit_button:
-            if username == "admin" and password == "password":
-                st.session_state.logged_in = True
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        with st.form(key='login_form'):
+            username = st.text_input("Usuario", key='username')
+            password = st.text_input("Contraseña", type="password", key='password')
+            submit_button = st.form_submit_button(label='Login')
+            if submit_button:
+                if username == "admin" and password == "password":
+                    st.session_state.logged_in = True
                 #st.session_state.username = username
             else:
                 st.error("Usuario/Contraseña incorrecto")
