@@ -2,7 +2,11 @@ import pandas as pd
 import streamlit as st
 from streamlit_option_menu import option_menu
 from APIbodega import response
+from APIconsumos import response_consumo
+from APIobras import response_obras
 import plotly.express as px
+
+
 
 # DICCIONARIO p4 (FECHA INICIO)
 meses_dict = {
@@ -34,10 +38,10 @@ meses_dict_fin = {
     'Diciembre': '2024/01/12'
 }
 
-# CONFIG PAGINA
+#CONFIG PAGINA
 st.set_page_config(page_icon='📊', layout='wide', page_title='Dashboard')
 
-# Función para la pantalla de inicio de sesión
+#FUNCION PARA PANTALLA DE INICIO DE SESIÓN
 def show_login_form():
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
@@ -52,11 +56,11 @@ def show_login_form():
                 else:
                     st.error("Usuario/Contraseña incorrecto")
 
-# Función para cerrar sesión
+#FUNCION PARA CERRAR SESIÓN
 def logout():
     st.session_state.logged_in = False
 
-# Función para la interfaz principal
+#FUNCION INTERFAZ PRINCIPAL
 def main_interface():
     # SIDEBAR
     with st.sidebar:
@@ -64,32 +68,34 @@ def main_interface():
         if st.button("Cerrar Sesión"):
             logout()
         
-        # MENU DEL SIDEBAR
+#MENU DEL SIDEBAR
+
         selected = option_menu(menu_title=None, options=['Bodega', 'Costos', 'Seguimiento'], icons=['boxes', 'coin', 'list-task'])
         p1 = st.selectbox(label='Cliente', options=['INCOPROV'] + ['INCOPROV'], label_visibility='hidden', placeholder='Cliente')
         p2 = st.selectbox(label='Empresa', options=['HGM'] + ['INCOPROV', 'HGM'], label_visibility='hidden', placeholder='Empresa')
-    
-    # CLICK BODEGA SIDEBAR
+        
+        
+        
+#CLICK BODEGA SIDEBAR
+
     if selected == 'Bodega':
         st.title('EPP')
         col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
             
         with col1:    
-            mes_seleccionado = st.selectbox(label='Mes inicio', options=['Enero'] + list(meses_dict.keys()), label_visibility='hidden')
-            fecha_inicio = meses_dict[mes_seleccionado]
-            st.container() 
+            mes_inicio,mes_fin=st.select_slider(label='Rango Fecha Bodega', options=list(meses_dict.keys()), value=['Enero','Diciembre'], label_visibility='hidden')
+            fecha_inicio = meses_dict[mes_inicio]
+            fecha_fin = meses_dict_fin[mes_fin]
         
-        with col2:
-            mes_seleccionado = st.selectbox(label='Me fin', options=['Diciembre'] + list(meses_dict_fin.keys()), label_visibility='hidden')
-            fecha_fin = meses_dict_fin[mes_seleccionado] 
-        
+        #with col2:
         with col3:
             p4 = st.text_input(label='Mes Inicio API', value=(fecha_inicio), label_visibility='hidden', disabled=True)
         
         with col4:
             p5 = st.text_input(label='Mes Fin API', value=(fecha_fin), label_visibility='hidden', disabled=True, )
     
-        # LLAMADA API DESDE APIbodega.py
+# LLAMADA APIbodega.py
+
         APIbodega = response(p1, p2, p4, p5)
         data = APIbodega.json()['datos']
         # Columnas que voy a llamar de 'datos'
@@ -98,13 +104,14 @@ def main_interface():
         filtered_data = [{column: entry[column] for column in selected_columns} for entry in data]
 
     
-        # TITULO PARA DATOS
+#RESULTADO APIbodega.py (DATOS)
+        
         st.divider()
     
-        # FILTRO DATOS API CLASE, OBRA, RECURSO y RECIBE
+    #FILTRO DATOS API CLASE, OBRA, RECURSO y RECIBE
+
         filtered_data_clases = pd.DataFrame(filtered_data)
     
-        # COLUMNAS PARA FILTROS
         col1, col2, col3, col4 = st.columns([1, 1, 2, 2])
         with col1:
             clases = (filtered_data_clases['nombreClase'].unique())
@@ -128,19 +135,23 @@ def main_interface():
             trabajador_seleccionado = st.selectbox(label='Trabajador', options=[''] + list(recibe), placeholder='Nombre Trabajador')
             filtered_data_trabajador = filtered_data_obra[filtered_data_obra['recibe'] == trabajador_seleccionado] if trabajador_seleccionado else filtered_data_recurso
     
-        # MENU RESUMEN, FLUJO ECONOMICO, USO RECURSO
+    #MENU RESUMEN, FLUJO ECONOMICO, USO RECURSO
+        
         selected = option_menu(menu_title=None, options=['Cantidad', 'Monto', 'Ver Datos'], icons=['123', 'cash-coin', 'database'], orientation='horizontal')
     
-        # CLICK MENU CANTIDAD, MONTO, DATOS
+        #CLICK MENU CANTIDAD, MONTO, DATOS
         if selected == 'Cantidad':
-            # TOTAL CANTIDAD
+            #TOTAL CANTIDAD
+
             total_cantidad = int(filtered_data_trabajador['cantidad'].sum())
             st.metric(label='Total Cantidad', value=total_cantidad)
     
-            # GRAFICO CANTIDAD    
+            #GRAFICO CANTIDAD 
+               
             graficoCantidad = st.bar_chart(filtered_data_trabajador, x='fecha', y='cantidad', width=0, height=0, use_container_width=True)
     
-            # GRAFICOS OBRA, RECURSO, RECIBE
+            #GRAFICOS OBRA, RECURSO, RECIBE
+
             col1, col2, col3 = st.columns([1, 1, 1])
             with col1:
                 graficoObra = st.bar_chart(filtered_data_trabajador, x='obra', y='cantidad', width=0, height=0, use_container_width=True)
@@ -150,19 +161,22 @@ def main_interface():
                 graficoRecurso = st.bar_chart(filtered_data_trabajador, x='nombreRecurso', y='cantidad', width=0, height=0, use_container_width=True)
     
         if selected == 'Monto':
-            # TOTAL MONTO
+            #TOTAL MONTO
+
             total_monto = int(filtered_data_trabajador['subTotal'].sum())
             st.metric(label='Total Monto', value=total_monto)
     
-            # GRAFICO MONTO    
+            #GRAFICO MONTO    
+            
             graficoMonto = st.bar_chart(filtered_data_trabajador, x='fecha', y='subTotal', width=0, height=0, use_container_width=True)
     
-            # GRAFICOS OBRA, RECURSO, RECIBE MONTO
+            #GRAFICOS OBRA, RECURSO, RECIBE MONTO
+            
             col1, col2, col3 = st.columns([1, 1, 1])
             with col1:
                 graficoObraMonto = st.bar_chart(filtered_data_trabajador, x='obra', y='subTotal', width=0, height=0, use_container_width=True)
                 obra_monto = px.scatter(filtered_data_trabajador, x="obra", y="subTotal")
-                st.plotly_chart(obra_monto, theme="streamlit", use_container_width=True)
+                st.plotly_chart(obra_monto, theme=None, use_container_width=True)
     
             with col2:
                 graficoRecibeMonto = st.bar_chart(filtered_data_trabajador, x='recibe', y='subTotal', width=0, height=0, use_container_width=True)
@@ -170,18 +184,49 @@ def main_interface():
                 graficoRecursoMonto = st.bar_chart(filtered_data_trabajador, x='nombreRecurso', y='subTotal', width=0, height=0, use_container_width=True)
     
         if selected == 'Ver Datos':
-            # TABLA CANTIDAD
+            #TABLA DATOS
+
             with st.container(height=600):
                 st.table(filtered_data_trabajador)
     
+#CLICK SIDEBAR COSTOS
+
     if selected == 'Costos':
+
+#LLAMADA APIobras
+        
+        APIobras = response_obras(p1, p2)
+        datos_obra = APIobras.json()['datos']
+        # Columnas que voy a llamar de 'datos'
+        columns_obra = ['codObra']
+        # Armar un nuevo DF para mostrar las columnas seleccionadas
+        filtered_obra = [{column: entry[column] for column in columns_obra} for entry in datos_obra]
+        filtered_data_obra = pd.DataFrame(filtered_obra)
+        
+        
         st.title('Costos')
+        col1,col2,col3,col4= st.columns([1,1,1,1])
+        
+        with col1:
+            par3=st.selectbox(label='Año', options=['2024','2023'])
+        filtro_obra = (filtered_data_obra['codObra'].unique())
+
+        with col2:
+            par4=st.selectbox(label='Obra', options=[''] + list(filtro_obra))
 
 
+#LLAMADA APIconsumos
+        
+        APIconsumos = response_consumo(p1, p2, par3, par4)
+        datos = APIconsumos.json()['datos']
+        # Columnas que voy a llamar de 'datos'
+        columns = ['obra', 'cantidad']
+        # Armar un nuevo DF para mostrar las columnas seleccionadas
+        filtered = [{column: entry[column] for column in columns} for entry in datos]
 
-
-
-
+        filtered_data_consumos = pd.DataFrame(filtered)
+        st.table(filtered_data_consumos)
+        
 
 
 
