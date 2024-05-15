@@ -189,8 +189,5 @@ if "show_login" not in st.session_state:
 if st.session_state.logged_in:
     main_interface()
 else:
-    if st.button('Iniciar Sesión'):
-        st.session_state.show_login = True
-
-    if st.session_state.show_login:
-        show_login_form()
+    st.session_state.show_login = True
+    show_login_form()
