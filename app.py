@@ -61,42 +61,44 @@ def main_interface():
     # SIDEBAR
     with st.sidebar:
         st.image('assets/Incoprovil.png')
-        if st.button("Logout"):
+        if st.button("Cerrar Sesión"):
             logout()
         
         # MENU DEL SIDEBAR
         selected = option_menu(menu_title=None, options=['Bodega', 'Costos', 'Seguimiento'], icons=['boxes', 'coin', 'list-task'])
+        p1 = st.selectbox(label='Cliente', options=['INCOPROV'] + ['INCOPROV'], label_visibility='hidden', placeholder='Cliente')
+        p2 = st.selectbox(label='Empresa', options=['HGM'] + ['INCOPROV', 'HGM'], label_visibility='hidden', placeholder='Empresa')
     
     # CLICK BODEGA SIDEBAR
     if selected == 'Bodega':
         st.title('EPP')
-        st.text('Parámetros')
         col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
-    
-        with col1:
-            p1 = st.selectbox('Cliente', options=['INCOPROV'] + ['INCOPROV'])
-        with col2:
-            p2 = st.selectbox('Empresa', options=['HGM'] + ['INCOPROV', 'HGM'])
-        with col3:    
-            mes_seleccionado = st.selectbox(label='Mes inicio mov bodega (2024)', options=['Enero'] + list(meses_dict.keys()))
+            
+        with col1:    
+            mes_seleccionado = st.selectbox(label='Mes inicio', options=['Enero'] + list(meses_dict.keys()), label_visibility='hidden')
             fecha_inicio = meses_dict[mes_seleccionado]
             st.container() 
-            p4 = st.text_input(label='Mes Inicio API', value=(fecha_inicio), label_visibility='hidden')
+        
+        with col2:
+            mes_seleccionado = st.selectbox(label='Me fin', options=['Diciembre'] + list(meses_dict_fin.keys()), label_visibility='hidden')
+            fecha_fin = meses_dict_fin[mes_seleccionado] 
+        
+        with col3:
+            p4 = st.text_input(label='Mes Inicio API', value=(fecha_inicio), label_visibility='hidden', disabled=True)
+        
         with col4:
-            mes_seleccionado = st.selectbox(label='Me fin mov bodega (2024)', options=['Diciembre'] + list(meses_dict_fin.keys()))
-            fecha_fin = meses_dict_fin[mes_seleccionado]
-            p5 = st.text_input(label='Mes Fin API', value=(fecha_fin), label_visibility='hidden')
+            p5 = st.text_input(label='Mes Fin API', value=(fecha_fin), label_visibility='hidden', disabled=True, )
     
         # LLAMADA API DESDE APIbodega.py
-        API = response(p1, p2, p4, p5)
-        data = API.json()['datos']
+        APIbodega = response(p1, p2, p4, p5)
+        data = APIbodega.json()['datos']
         # Columnas que voy a llamar de 'datos'
         selected_columns = ['obra', 'recibe', 'nombreRecurso', 'undRecurso', 'cantidad', 'precio', 'subTotal', 'clase', 'nombreClase', 'fecha']
         # Armar un nuevo DF para mostrar las columnas seleccionadas
         filtered_data = [{column: entry[column] for column in selected_columns} for entry in data]
+
     
         # TITULO PARA DATOS
-        st.text('DATA')
         st.divider()
     
         # FILTRO DATOS API CLASE, OBRA, RECURSO y RECIBE
@@ -127,7 +129,6 @@ def main_interface():
             filtered_data_trabajador = filtered_data_obra[filtered_data_obra['recibe'] == trabajador_seleccionado] if trabajador_seleccionado else filtered_data_recurso
     
         # MENU RESUMEN, FLUJO ECONOMICO, USO RECURSO
-        st.divider()
         selected = option_menu(menu_title=None, options=['Cantidad', 'Monto', 'Ver Datos'], icons=['123', 'cash-coin', 'database'], orientation='horizontal')
     
         # CLICK MENU CANTIDAD, MONTO, DATOS
@@ -142,11 +143,11 @@ def main_interface():
             # GRAFICOS OBRA, RECURSO, RECIBE
             col1, col2, col3 = st.columns([1, 1, 1])
             with col1:
-                graficoObra = st.bar_chart(filtered_data, x='obra', y='cantidad', width=0, height=0, use_container_width=True)
+                graficoObra = st.bar_chart(filtered_data_trabajador, x='obra', y='cantidad', width=0, height=0, use_container_width=True)
             with col2:
-                graficoRecibe = st.bar_chart(filtered_data, x='recibe', y='cantidad', width=0, height=0, use_container_width=True)
+                graficoRecibe = st.bar_chart(filtered_data_trabajador, x='recibe', y='cantidad', width=0, height=0, use_container_width=True)
             with col3:
-                graficoRecurso = st.bar_chart(filtered_data, x='nombreRecurso', y='cantidad', width=0, height=0, use_container_width=True)
+                graficoRecurso = st.bar_chart(filtered_data_trabajador, x='nombreRecurso', y='cantidad', width=0, height=0, use_container_width=True)
     
         if selected == 'Monto':
             # TOTAL MONTO
@@ -159,14 +160,14 @@ def main_interface():
             # GRAFICOS OBRA, RECURSO, RECIBE MONTO
             col1, col2, col3 = st.columns([1, 1, 1])
             with col1:
-                graficoObraMonto = st.bar_chart(filtered_data, x='obra', y='subTotal', width=0, height=0, use_container_width=True)
+                graficoObraMonto = st.bar_chart(filtered_data_trabajador, x='obra', y='subTotal', width=0, height=0, use_container_width=True)
                 obra_monto = px.scatter(filtered_data_trabajador, x="obra", y="subTotal")
                 st.plotly_chart(obra_monto, theme="streamlit", use_container_width=True)
     
             with col2:
-                graficoRecibeMonto = st.bar_chart(filtered_data, x='recibe', y='subTotal', width=0, height=0, use_container_width=True)
+                graficoRecibeMonto = st.bar_chart(filtered_data_trabajador, x='recibe', y='subTotal', width=0, height=0, use_container_width=True)
             with col3:
-                graficoRecursoMonto = st.bar_chart(filtered_data, x='nombreRecurso', y='subTotal', width=0, height=0, use_container_width=True)
+                graficoRecursoMonto = st.bar_chart(filtered_data_trabajador, x='nombreRecurso', y='subTotal', width=0, height=0, use_container_width=True)
     
         if selected == 'Ver Datos':
             # TABLA CANTIDAD
@@ -175,6 +176,15 @@ def main_interface():
     
     if selected == 'Costos':
         st.title('Costos')
+
+
+
+
+
+
+
+
+
     
     if selected == 'Seguimiento':
         st.title('Seguimiento')
