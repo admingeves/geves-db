@@ -42,15 +42,15 @@ def show_login_form():
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
         with st.form(key='login_form'):
-            username = st.text_input("Usuario", key='username')
-            password = st.text_input("Contraseña", type="password", key='password')
-            submit_button = st.form_submit_button(label='Login')
+            username = st.text_input(label="Usuario", key='username', label_visibility='hidden', placeholder='Usuario')
+            password = st.text_input("Contraseña", type="password", key='password', label_visibility='hidden', placeholder='Contraseña')
+            submit_button = st.form_submit_button(label='Iniciar Sesión')
             if submit_button:
                 if username == "admin" and password == "1111":
                     st.session_state.logged_in = True
                 #st.session_state.username = username
-            else:
-                st.error("Usuario/Contraseña incorrecto")
+                else:
+                    st.error("Usuario/Contraseña incorrecto")
 
 # Función para cerrar sesión
 def logout():
