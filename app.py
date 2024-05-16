@@ -51,7 +51,7 @@ def show_login_form():
             password = st.text_input("Contraseña", type="password", key='password', label_visibility='hidden', placeholder='Contraseña')
             submit_button = st.form_submit_button(label='Iniciar Sesión')
             if submit_button:
-                if username == "admin" and password == "admin111":
+                if username == "admin" and password == "admin1111":
                     st.session_state.logged_in = True
                 else:
                     st.error("Usuario/Contraseña incorrecto")
@@ -220,7 +220,7 @@ def main_interface():
 #DATA FRAME PARA HACER LOS CALCULOS DE CONSUMOS
 
         filtered_data_consumos = pd.DataFrame(filtered)
-
+        
 #FILTROS APIconsumos
 
         with col3:
@@ -252,6 +252,7 @@ def main_interface():
 #GRAFICO CANTIDAD APIconsumo
              
         filtered_data_consumos['fecha'] = pd.to_datetime(filtered_data_consumos['fecha'], format='%d/%m/%Y')
+        
 
         hoy = datetime.now().strftime('%d-%m-%y')
         ayer = datetime.now() - timedelta(days=1)
