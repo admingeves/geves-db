@@ -5,7 +5,7 @@ from APIbodega import response
 from APIconsumos import response_consumo
 from APIobras import response_obras
 import plotly.express as px
-
+from datetime import datetime, timedelta
 
 
 # DICCIONARIO p4 (FECHA INICIO)
@@ -45,19 +45,18 @@ st.set_page_config(page_icon='📊', layout='wide', page_title='Dashboard')
 def show_login_form():
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
-        with st.form(key='login_form', border=False):
-            logo_geves=st.image('assets/geves.png')
+        with st.form(key='login_form'):
+            logo_geves = st.image('assets/geves.png')
             username = st.text_input(label="Usuario", key='username', label_visibility='hidden', placeholder='Usuario')
             password = st.text_input("Contraseña", type="password", key='password', label_visibility='hidden', placeholder='Contraseña')
             submit_button = st.form_submit_button(label='Iniciar Sesión')
             if submit_button:
-                if username == "admin" and password == "1111":
+                if username == "admin" and password == "admin1111":
                     st.session_state.logged_in = True
-                #st.session_state.username = username
                 else:
                     st.error("Usuario/Contraseña incorrecto")
 
-#FUNCION PARA CERRAR SESIÓN
+# FUNCION PARA CERRAR SESIÓN
 def logout():
     st.session_state.logged_in = False
 
@@ -133,23 +132,23 @@ def main_interface():
     
         #CLICK MENU CANTIDAD, MONTO, DATOS
         if selected == 'Cantidad':
-            #TOTAL CANTIDAD
+    #TOTAL CANTIDAD
             data_bodega=pd.DataFrame(filtered_data_trabajador)
             suma_data_bodega=data_bodega.groupby('fecha')['cantidad'].sum().reset_index()
             suma_obra_bodega=data_bodega.groupby('obra')['cantidad'].sum().reset_index()
             suma_recibe_bodega=data_bodega.groupby('recibe')['cantidad'].sum().reset_index()
             suma_recurso_bodega=data_bodega.groupby('nombreRecurso')['cantidad'].sum().reset_index()            
 
-            total_cantidad = int(filtered_data_trabajador['cantidad'].sum())
-        
+            total_cantidad = filtered_data_trabajador['cantidad'].sum()
+            #total_cantidad_formateada=f"{total_cantidad}"
             st.metric(label='Total Cantidad', value=total_cantidad)
+            pd.options.display.float_format = '{:,.2f}'.format
         
-     #GRAFICO CANTIDAD 
+    #GRAFICO CANTIDAD 
 
             graficoCantidad=st.bar_chart(suma_data_bodega.set_index('fecha'))
     
     #GRAFICOS OBRA, RECURSO, RECIBE
-
             col1, col2, col3 = st.columns([1, 1, 1])
             with col1:
                 graficoObra = st.bar_chart(suma_obra_bodega.set_index('obra'))
@@ -161,7 +160,7 @@ def main_interface():
         if selected == 'Monto':
     #TOTAL MONTO
 
-            total_monto = int(filtered_data_trabajador['subTotal'].sum())
+            total_monto = filtered_data_trabajador['subTotal'].sum()
             st.metric(label='Total Monto', value=total_monto)
     
     #GRAFICO MONTO    
@@ -195,9 +194,9 @@ def main_interface():
         
         APIobras = response_obras(p1, p2)
         datos_obra = APIobras.json()['datos']
-        # Columnas que voy a llamar de 'datos'
+    # Columnas que voy a llamar de 'datos'
         columns_obra = ['codObra']
-        # Armar un nuevo DF para mostrar las columnas seleccionadas
+    # Armar un nuevo DF para mostrar las columnas seleccionadas
         filtered_obra = [{column: entry[column] for column in columns_obra} for entry in datos_obra]
         filtered_data_obra = pd.DataFrame(filtered_obra)
         
@@ -214,9 +213,11 @@ def main_interface():
         APIconsumos = response_consumo(p1, p2, par3, par4)
         datos = APIconsumos.json()['datos']
         # Columnas que voy a llamar de 'datos'
-        columns = ['obra', 'cantidad', 'tipoCosto', 'codigoArea', 'nombrePartida', 'nombreRecurso', 'fecha', 'total']
+        columns = ['obra', 'cantidad', 'tipoCosto', 'codigoArea', 'nombrePartida', 'nombreRecurso', 'fecha', 'total', 'mes', 'ano']
         # Armar un nuevo DF para mostrar las columnas seleccionadas
         filtered = [{column: entry[column] for column in columns} for entry in datos]
+
+#DATA FRAME PARA HACER LOS CALCULOS DE CONSUMOS
 
         filtered_data_consumos = pd.DataFrame(filtered)
 
@@ -246,12 +247,64 @@ def main_interface():
         suma_tipocosto_consumo=data_consumo.groupby('tipoCosto')['total'].sum().reset_index()
         suma_area_consumo=data_consumo.groupby('codigoArea')['total'].sum().reset_index()
         suma_partida_consumo=data_consumo.groupby('nombrePartida')['total'].sum().reset_index()
+        
 
-#GRAFICO CANTIDAD APIconsumo                
-        total_cantidad_consumo = int(suma_partida_consumo['total'].sum())
-        st.metric(label='Total Costo', value=total_cantidad_consumo)
+#GRAFICO CANTIDAD APIconsumo
+             
+        filtered_data_consumos['fecha'] = pd.to_datetime(filtered_data_consumos['fecha'], format='%d/%m/%Y')
+
+        hoy = datetime.now().strftime('%d-%m-%y')
+        ayer = datetime.now() - timedelta(days=1)
+        antes_ayer= datetime.now() - timedelta(days=2)
+        hoy_menos3= datetime.now() - timedelta(days=3)
+        fecha_ayer = ayer.strftime('%d-%m-%y')
+        fecha_antes_ayer= antes_ayer.strftime('%d-%m-%y')
+        fecha_hoy_menos3= hoy_menos3.strftime('%d-%m-%y')
+
+        df_hoy = filtered_data_consumos[filtered_data_consumos['fecha'] == hoy]
+        df_ayer = filtered_data_consumos[filtered_data_consumos['fecha'] == fecha_ayer]
+        df_antes_ayer= filtered_data_consumos[filtered_data_consumos['fecha'] == fecha_antes_ayer]
+        df_hoy_menos3= filtered_data_consumos[filtered_data_consumos['fecha'] == fecha_hoy_menos3]
+
+        suma_total_hoy = df_hoy['cantidad'].sum()
+        suma_total_ayer = df_ayer['total'].sum()
+        suma_total_antes_ayer = df_antes_ayer['total'].sum()
+        suma_total_hoy_menos3 = df_hoy_menos3['total'].sum()
+
+        #suma_total_hoy_menos3_formateada = "{:,}".format(suma_total_hoy_menos3)
+        #suma_total_hoy_menos3_formateada = f"{suma_total_hoy_menos3}"
+        #suma_total_antes_ayer_formateada = "{:,}".format(suma_total_antes_ayer)
+        #suma_total_antes_ayer_formateada = f"{suma_total_antes_ayer}"
+        #suma_total_ayer_formateada = "{:,}".format(suma_total_ayer)
+        #suma_total_ayer_formateada = f"{suma_total_ayer}"
+        #suma_total_hoy_formateada = "{:,}".format(suma_total_hoy)
+        #suma_total_hoy_formateada = f"{suma_total_hoy}"
+
+        delta_antes_ayer = ((suma_total_antes_ayer - suma_total_hoy_menos3) / suma_total_hoy_menos3) * 100
+        delta_ayer = ((suma_total_ayer - suma_total_antes_ayer) / suma_total_antes_ayer) * 100
+        delta_hoy = ((suma_total_hoy - suma_total_ayer) / suma_total_ayer) * 100
+
+        col1,col2,col3,col4 = st.columns([1,1,1,1])
+        with col1:
+            with st.container(border=True,height=130):
+                st.metric(label='Total Costo antes de ayer', value=suma_total_antes_ayer, delta=delta_antes_ayer, delta_color= "inverse")
+        
+        with col2:
+            with st.container(border=True, height=130):
+                st.metric(label='Total Costo ayer', value=suma_total_ayer, delta=delta_ayer, delta_color= "inverse")
+        
+        with col3:
+            with st.container(border=True, height=130):
+                st.metric(label='Total Costo hoy', value=suma_total_hoy, delta=delta_hoy, delta_color= "inverse")
+        
+        with col4:
+            with st.container(border=True, height=130):
+                total_cantidad_consumo = suma_partida_consumo['total'].sum()
+                st.metric(label='Total Costo', value=total_cantidad_consumo)
+                
+
         grafico_costo= px.scatter(suma_data_consumo.set_index('fecha'))
-        st.plotly_chart(grafico_costo, theme=None, use_container_width=True)
+        st.plotly_chart(grafico_costo, theme=None, use_container_width=True, )
 
 #3 GRAFICOS CANTIDAD APIconsumo
 
@@ -271,7 +324,18 @@ def main_interface():
 
 
     if selected == 'Seguimiento':
-        st.title('Seguimiento')
+        st.title('Seguimiento')    
+
+
+
+
+
+
+
+
+
+
+
 
 # Comprobación de estado de sesión
 if "logged_in" not in st.session_state:
