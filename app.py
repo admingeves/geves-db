@@ -51,7 +51,7 @@ def show_login_form():
             password = st.text_input("Contraseña", type="password", key='password', label_visibility='hidden', placeholder='Contraseña')
             submit_button = st.form_submit_button(label='Iniciar Sesión')
             if submit_button:
-                if username == "admin" and password == "admin1111":
+                if username == "admin" and password == "admin111":
                     st.session_state.logged_in = True
                 else:
                     st.error("Usuario/Contraseña incorrecto")
