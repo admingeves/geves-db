@@ -45,7 +45,8 @@ st.set_page_config(page_icon='📊', layout='wide', page_title='Dashboard')
 def show_login_form():
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
-        with st.form(key='login_form'):
+        with st.form(key='login_form', border=False):
+            logo_geves=st.image('assets/geves.png')
             username = st.text_input(label="Usuario", key='username', label_visibility='hidden', placeholder='Usuario')
             password = st.text_input("Contraseña", type="password", key='password', label_visibility='hidden', placeholder='Contraseña')
             submit_button = st.form_submit_button(label='Iniciar Sesión')
@@ -80,19 +81,12 @@ def main_interface():
 
     if selected == 'Bodega':
         st.title('EPP')
-        col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
-            
-        with col1:    
-            mes_inicio,mes_fin=st.select_slider(label='Rango Fecha Bodega', options=list(meses_dict.keys()), value=['Enero','Diciembre'], label_visibility='hidden', )
-            fecha_inicio = meses_dict[mes_inicio]
-            fecha_fin = meses_dict_fin[mes_fin]
-        
-        
-        with col2:
-            p4 = st.text_input(label='Mes Inicio API', value=(fecha_inicio), label_visibility='hidden', disabled=True)
-        
-        with col3:
-            p5 = st.text_input(label='Mes Fin API', value=(fecha_fin), label_visibility='hidden', disabled=True, )
+               
+        mes_inicio,mes_fin=st.select_slider(label='Rango Fecha Bodega', options=list(meses_dict.keys()), value=['Enero','Diciembre'], label_visibility='hidden', )
+        fecha_inicio = meses_dict[mes_inicio]
+        fecha_fin = meses_dict_fin[mes_fin]
+        p4=fecha_inicio
+        p5=fecha_fin
     
 # LLAMADA APIbodega.py
 
@@ -105,8 +99,6 @@ def main_interface():
 
     
 #RESULTADO APIbodega.py (DATOS)
-        
-        st.divider()
     
     #FILTRO DATOS API CLASE, OBRA, RECURSO y RECIBE
 
@@ -146,20 +138,17 @@ def main_interface():
             suma_data_bodega=data_bodega.groupby('fecha')['cantidad'].sum().reset_index()
             suma_obra_bodega=data_bodega.groupby('obra')['cantidad'].sum().reset_index()
             suma_recibe_bodega=data_bodega.groupby('recibe')['cantidad'].sum().reset_index()
-            suma_recurso_bodega=data_bodega.groupby('nombreRecurso')['cantidad'].sum().reset_index()
-            
-
-
+            suma_recurso_bodega=data_bodega.groupby('nombreRecurso')['cantidad'].sum().reset_index()            
 
             total_cantidad = int(filtered_data_trabajador['cantidad'].sum())
         
             st.metric(label='Total Cantidad', value=total_cantidad)
         
-            #GRAFICO CANTIDAD 
+     #GRAFICO CANTIDAD 
+
             graficoCantidad=st.bar_chart(suma_data_bodega.set_index('fecha'))
-            #graficoCantidad = st.bar_chart(filtered_data_trabajador, x='fecha', y='cantidad', width=0, height=0, use_container_width=True)
     
-            #GRAFICOS OBRA, RECURSO, RECIBE
+    #GRAFICOS OBRA, RECURSO, RECIBE
 
             col1, col2, col3 = st.columns([1, 1, 1])
             with col1:
@@ -170,16 +159,16 @@ def main_interface():
                 graficoRecurso = st.bar_chart(suma_recurso_bodega.set_index('nombreRecurso'))
     
         if selected == 'Monto':
-            #TOTAL MONTO
+    #TOTAL MONTO
 
             total_monto = int(filtered_data_trabajador['subTotal'].sum())
             st.metric(label='Total Monto', value=total_monto)
     
-            #GRAFICO MONTO    
+    #GRAFICO MONTO    
             
             graficoMonto = st.bar_chart(filtered_data_trabajador, x='fecha', y='subTotal', width=0, height=0, use_container_width=True)
     
-            #GRAFICOS OBRA, RECURSO, RECIBE MONTO
+    #GRAFICOS OBRA, RECURSO, RECIBE MONTO
             
             col1, col2, col3 = st.columns([1, 1, 1])
             with col1:
@@ -193,7 +182,7 @@ def main_interface():
                 graficoRecursoMonto = st.bar_chart(filtered_data_trabajador, x='nombreRecurso', y='subTotal', width=0, height=0, use_container_width=True)
     
         if selected == 'Ver Datos':
-            #TABLA DATOS
+    #TABLA DATOS
 
             with st.container(height=600):
                 st.table(filtered_data_trabajador)
@@ -215,7 +204,7 @@ def main_interface():
         st.title('Costos')
         col1,col2,col3,col4,col5,col6 = st.columns([1,1,1,1,1,1])
         with col1:
-            par3=st.selectbox(label='Año', options=['2024','2023'], label_visibility='hidden')
+            par3=st.selectbox(label='Periodo', options=['2024','2023'], label_visibility='visible')
             filtro_obra = (filtered_data_obra['codObra'].unique())
         with col2:
             par4=st.selectbox(label='Obra', options=[''] + list(filtro_obra), label_visibility='visible', placeholder='Obra')
@@ -232,6 +221,7 @@ def main_interface():
         filtered_data_consumos = pd.DataFrame(filtered)
 
 #FILTROS APIconsumos
+
         with col3:
             t_costo=(filtered_data_consumos['tipoCosto'].unique())
             t_costo_seleccionado=st.selectbox(label='Tipo Costo', options=[''] + list(t_costo), placeholder='Tipo de Costos', label_visibility='visible' )
@@ -249,8 +239,8 @@ def main_interface():
             recurso_consumo_seleccionada=st.selectbox(label='Recurso', options=[''] + list(recurso_consumo), placeholder='Nombre Recurso', label_visibility='visible')
             filtered_recurso_consumo = filtered_partida_consumo[filtered_partida_consumo['nombreRecurso'] == recurso_consumo_seleccionada] if recurso_consumo_seleccionada else filtered_partida_consumo
 
-        
-            
+        selected = option_menu(menu_title=None, options=['Resumen', 'Flujo Económico', 'Uso Recursos'], icons=['list-ol', 'cash-coin', 'tools'], orientation='horizontal')
+
         data_consumo=pd.DataFrame(filtered_recurso_consumo)
         suma_data_consumo=data_consumo.groupby('fecha')['total'].sum().reset_index()
         suma_tipocosto_consumo=data_consumo.groupby('tipoCosto')['total'].sum().reset_index()
@@ -260,7 +250,8 @@ def main_interface():
 #GRAFICO CANTIDAD APIconsumo                
         total_cantidad_consumo = int(suma_partida_consumo['total'].sum())
         st.metric(label='Total Costo', value=total_cantidad_consumo)
-        st.bar_chart(suma_data_consumo.set_index('fecha'))
+        grafico_costo= px.scatter(suma_data_consumo.set_index('fecha'))
+        st.plotly_chart(grafico_costo, theme=None, use_container_width=True)
 
 #3 GRAFICOS CANTIDAD APIconsumo
 
