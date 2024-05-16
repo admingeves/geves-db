@@ -213,49 +213,72 @@ def main_interface():
         filtered_data_obra = pd.DataFrame(filtered_obra)
         
         st.title('Costos')
-        col1,col2= st.columns([1,3])
-        
+        col1,col2,col3,col4,col5,col6 = st.columns([1,1,1,1,1,1])
         with col1:
             par3=st.selectbox(label='Año', options=['2024','2023'], label_visibility='hidden')
             filtro_obra = (filtered_data_obra['codObra'].unique())
-            par4=st.selectbox(label='Obra', options=[''] + list(filtro_obra), label_visibility='hidden')
+        with col2:
+            par4=st.selectbox(label='Obra', options=[''] + list(filtro_obra), label_visibility='visible', placeholder='Obra')
 
 #LLAMADA APIconsumos
         
-            APIconsumos = response_consumo(p1, p2, par3, par4)
-            datos = APIconsumos.json()['datos']
+        APIconsumos = response_consumo(p1, p2, par3, par4)
+        datos = APIconsumos.json()['datos']
         # Columnas que voy a llamar de 'datos'
-            columns = ['obra', 'cantidad', 'tipoCosto', 'codigoArea', 'nombrePartida', 'nombreRecurso', 'fecha']
+        columns = ['obra', 'cantidad', 'tipoCosto', 'codigoArea', 'nombrePartida', 'nombreRecurso', 'fecha', 'total']
         # Armar un nuevo DF para mostrar las columnas seleccionadas
-            filtered = [{column: entry[column] for column in columns} for entry in datos]
+        filtered = [{column: entry[column] for column in columns} for entry in datos]
 
-            filtered_data_consumos = pd.DataFrame(filtered)
+        filtered_data_consumos = pd.DataFrame(filtered)
 
+#FILTROS APIconsumos
+        with col3:
             t_costo=(filtered_data_consumos['tipoCosto'].unique())
-            t_costo_seleccionado=st.selectbox(label='Tipo Costo', options=[''] + list(t_costo), placeholder='Tipo de Costos', label_visibility='hidden' )
+            t_costo_seleccionado=st.selectbox(label='Tipo Costo', options=[''] + list(t_costo), placeholder='Tipo de Costos', label_visibility='visible' )
             filtered_t_costo = filtered_data_consumos[filtered_data_consumos['tipoCosto'] == t_costo_seleccionado] if t_costo_seleccionado else filtered_data_consumos
-
+        with col4:
             area_consumo= (filtered_t_costo['codigoArea'].unique())
-            area_consumo_seleccionada=st.selectbox(label='Área', options=[''] + list(area_consumo), placeholder='Nombre Área', label_visibility='hidden')
+            area_consumo_seleccionada=st.selectbox(label='Área', options=[''] + list(area_consumo), placeholder='Nombre Área', label_visibility='visible')
             filtered_area_consumo = filtered_t_costo[filtered_t_costo['codigoArea'] == area_consumo_seleccionada] if area_consumo_seleccionada else filtered_t_costo
-
+        with col5:
             partida_consumo= (filtered_area_consumo['nombrePartida'].unique())
-            partida_consumo_seleccionada=st.selectbox(label='Partida', options=[''] + list(partida_consumo), placeholder='Nombre Partida', label_visibility='hidden')
+            partida_consumo_seleccionada=st.selectbox(label='Partida', options=[''] + list(partida_consumo), placeholder='Nombre Partida', label_visibility='visible')
             filtered_partida_consumo = filtered_area_consumo[filtered_area_consumo['nombrePartida'] == partida_consumo_seleccionada] if partida_consumo_seleccionada else filtered_area_consumo
-
+        with col6:
             recurso_consumo= (filtered_partida_consumo['nombreRecurso'].unique())
-            recurso_consumo_seleccionada=st.selectbox(label='Recurso', options=[''] + list(recurso_consumo), placeholder='Nombre Recurso', label_visibility='hidden')
+            recurso_consumo_seleccionada=st.selectbox(label='Recurso', options=[''] + list(recurso_consumo), placeholder='Nombre Recurso', label_visibility='visible')
             filtered_recurso_consumo = filtered_partida_consumo[filtered_partida_consumo['nombreRecurso'] == recurso_consumo_seleccionada] if recurso_consumo_seleccionada else filtered_partida_consumo
 
-        with col2:
-            with st.container(height=400):
-                data_consumo=pd.DataFrame(filtered_recurso_consumo)
-                suma_data_consumo=data_consumo.groupby('fecha')['cantidad'].sum().reset_index()
-                st.bar_chart(suma_data_consumo.set_index('fecha'))
         
-                #st.table(filtered_recurso_consumo)
+            
+        data_consumo=pd.DataFrame(filtered_recurso_consumo)
+        suma_data_consumo=data_consumo.groupby('fecha')['total'].sum().reset_index()
+        suma_tipocosto_consumo=data_consumo.groupby('tipoCosto')['total'].sum().reset_index()
+        suma_area_consumo=data_consumo.groupby('codigoArea')['total'].sum().reset_index()
+        suma_partida_consumo=data_consumo.groupby('nombrePartida')['total'].sum().reset_index()
 
-    
+#GRAFICO CANTIDAD APIconsumo                
+        total_cantidad_consumo = int(suma_partida_consumo['total'].sum())
+        st.metric(label='Total Costo', value=total_cantidad_consumo)
+        st.bar_chart(suma_data_consumo.set_index('fecha'))
+
+#3 GRAFICOS CANTIDAD APIconsumo
+
+        col1,col2,col3 = st.columns([1,1,1])
+        with col1:
+            st.bar_chart(suma_tipocosto_consumo.set_index('tipoCosto'))
+        with col2:
+            st.bar_chart(suma_area_consumo.set_index('codigoArea'))
+        with col3:
+            st.bar_chart(suma_partida_consumo.set_index('nombrePartida'))
+                
+
+
+
+
+
+
+
     if selected == 'Seguimiento':
         st.title('Seguimiento')
 
