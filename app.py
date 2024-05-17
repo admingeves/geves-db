@@ -6,6 +6,7 @@ from APIconsumos import response_consumo
 from APIobras import response_obras
 import plotly.express as px
 from datetime import datetime, timedelta
+import numpy as np
 
 
 # DICCIONARIO p4 (FECHA INICIO)
@@ -70,7 +71,7 @@ def main_interface():
         
 #MENU DEL SIDEBAR
 
-        selected = option_menu(menu_title=None, options=['Bodega', 'Costos', 'Seguimiento'], icons=['boxes', 'coin', 'list-task'])
+        selected = option_menu(menu_title=None, options=['EPP', 'Costos'], icons=['person-badge-fill', 'coin'])
         p1 = st.selectbox(label='Cliente', options=['INCOPROV'], label_visibility='hidden', placeholder='Cliente')
         p2 = st.selectbox(label='Empresa', options=['INCOPROV', 'HGM'], label_visibility='hidden', placeholder='Empresa')
         
@@ -78,7 +79,7 @@ def main_interface():
         
 #CLICK BODEGA SIDEBAR
 
-    if selected == 'Bodega':
+    if selected == 'EPP':
         st.title('EPP')
                
         mes_inicio,mes_fin=st.select_slider(label='Rango Fecha Bodega', options=list(meses_dict.keys()), value=['Enero','Diciembre'], label_visibility='hidden', )
@@ -87,7 +88,8 @@ def main_interface():
         p4=fecha_inicio
         p5=fecha_fin
     
-# LLAMADA APIbodega.py
+#-------------------------------------------BODEGA INICIO------------------------------------------------------------------------------------------
+#LLAMADA APIbodega.py
 
         APIbodega = response(p1, p2, p4, p5)
         data = APIbodega.json()['datos']
@@ -98,7 +100,9 @@ def main_interface():
 
     
 #RESULTADO APIbodega.py (DATOS)
-    
+
+#-------------------------------------------BODEGA (FILTROS INICIO)------------------------------------------------------------------------------------------
+
     #FILTRO DATOS API CLASE, OBRA, RECURSO y RECIBE
 
         filtered_data_clases = pd.DataFrame(filtered_data)
@@ -125,24 +129,38 @@ def main_interface():
             recibe = (filtered_data_recurso['recibe'].unique())
             trabajador_seleccionado = st.selectbox(label='Trabajador', options=[''] + list(recibe), placeholder='Nombre Trabajador')
             filtered_data_trabajador = filtered_data_recurso[filtered_data_recurso['recibe'] == trabajador_seleccionado] if trabajador_seleccionado else filtered_data_recurso
+
+#-------------------------------------------BODEGA (FILTROS FIN)------------------------------------------------------------------------------------------
+
+#-------------------------------------------BODEGA (SUBMENU INICIO)------------------------------------------------------------------------------------------
     
     #MENU RESUMEN, FLUJO ECONOMICO, USO RECURSO
         
         selected = option_menu(menu_title=None, options=['Cantidad', 'Monto', 'Ver Datos'], icons=['123', 'cash-coin', 'database'], orientation='horizontal')
+
+#-------------------------------------------BODEGA (SUBMENU FIN------------------------------------------------------------------------------------------
     
+#-------------------------------------------BODEGA (CANTIDAD INICIO)------------------------------------------------------------------------------------------
+  
         #CLICK MENU CANTIDAD, MONTO, DATOS
         if selected == 'Cantidad':
     #TOTAL CANTIDAD
             data_bodega=pd.DataFrame(filtered_data_trabajador)
+            
+            data_bodega['cantidad'] = data_bodega['cantidad'].astype(int)
+            
             suma_data_bodega=data_bodega.groupby('fecha')['cantidad'].sum().reset_index()
             suma_obra_bodega=data_bodega.groupby('obra')['cantidad'].sum().reset_index()
             suma_recibe_bodega=data_bodega.groupby('recibe')['cantidad'].sum().reset_index()
             suma_recurso_bodega=data_bodega.groupby('nombreRecurso')['cantidad'].sum().reset_index()            
 
-            total_cantidad = filtered_data_trabajador['cantidad'].sum()
-            #total_cantidad_formateada=f"{total_cantidad}"
-            st.metric(label='Total Cantidad', value=total_cantidad)
-            pd.options.display.float_format = '{:,.2f}'.format
+            total_cantidad = data_bodega['cantidad'].sum()
+            
+            col1,col2,col3 = st.columns([1,2,1])
+            with col3:
+                with st.container(border=True, height=110):
+                    st.metric(label='Total Cantidad', value=f"{total_cantidad:,}")
+            
         
     #GRAFICO CANTIDAD 
 
@@ -156,12 +174,20 @@ def main_interface():
                 graficoRecibe = st.bar_chart(suma_recibe_bodega.set_index('recibe'))
             with col3:
                 graficoRecurso = st.bar_chart(suma_recurso_bodega.set_index('nombreRecurso'))
-    
+
+#-------------------------------------------BODEGA (CANTIDAD FIN)------------------------------------------------------------------------------------------
+
+#-------------------------------------------BODEGA (MONTO INICIO)------------------------------------------------------------------------------------------
+
         if selected == 'Monto':
     #TOTAL MONTO
-
-            total_monto = filtered_data_trabajador['subTotal'].sum()
-            st.metric(label='Total Monto', value=total_monto)
+            data_bodega=pd.DataFrame(filtered_data_trabajador)
+            data_bodega['subTotal'] = data_bodega['subTotal'].astype(int)
+            total_monto = data_bodega['subTotal'].sum()
+            col1,col2,col3 = st.columns([1,1,1])
+            with col3:
+                with st.container(border=True, height=110):
+                    st.metric(label='Total Monto', value=f"{total_monto:,}")
     
     #GRAFICO MONTO    
             
@@ -179,13 +205,26 @@ def main_interface():
                 graficoRecibeMonto = st.bar_chart(filtered_data_trabajador, x='recibe', y='subTotal', width=0, height=0, use_container_width=True)
             with col3:
                 graficoRecursoMonto = st.bar_chart(filtered_data_trabajador, x='nombreRecurso', y='subTotal', width=0, height=0, use_container_width=True)
-    
+
+#-------------------------------------------BODEGA (MONTO FIN)------------------------------------------------------------------------------------------
+
+#-------------------------------------------BODEGA (VER DATOS INICIO)------------------------------------------------------------------------------------------
+
         if selected == 'Ver Datos':
     #TABLA DATOS
 
             with st.container(height=600):
                 st.table(filtered_data_trabajador)
-    
+
+#-------------------------------------------BODEGA (VER DATOS FIN)------------------------------------------------------------------------------------------
+
+
+#-------------------------------------------BODEGA FIN------------------------------------------------------------------------------------------
+
+#-------------------------------------------COSTOS INICIO------------------------------------------------------------------------------------------
+
+#-------------------------------------------COSTOS (LLAMADA APIS INICIO)------------------------------------------------------------------------------------------
+
 #CLICK SIDEBAR COSTOS
 
     if selected == 'Costos':
@@ -213,14 +252,19 @@ def main_interface():
         APIconsumos = response_consumo(p1, p2, par3, par4)
         datos = APIconsumos.json()['datos']
         # Columnas que voy a llamar de 'datos'
-        columns = ['obra', 'cantidad', 'tipoCosto', 'codigoArea', 'nombrePartida', 'nombreRecurso', 'fecha', 'total', 'mes', 'ano']
+        columns = ['obra', 'cantidad', 'tipoCosto', 'codigoArea', 'nombrePartida', 'nombreRecurso', 'fecha', 'total', 'unidad', 'precio']
         # Armar un nuevo DF para mostrar las columnas seleccionadas
         filtered = [{column: entry[column] for column in columns} for entry in datos]
+
+#-------------------------------------------COSTOS (LLAMADA APIS FIN)------------------------------------------------------------------------------------------
+
 
 #DATA FRAME PARA HACER LOS CALCULOS DE CONSUMOS
 
         filtered_data_consumos = pd.DataFrame(filtered)
         
+ #-------------------------------------------COSTOS (FILTROS INICIO)------------------------------------------------------------------------------------------
+       
 #FILTROS APIconsumos
 
         with col3:
@@ -240,97 +284,229 @@ def main_interface():
             recurso_consumo_seleccionada=st.selectbox(label='Recurso', options=[''] + list(recurso_consumo), placeholder='Nombre Recurso', label_visibility='visible')
             filtered_recurso_consumo = filtered_partida_consumo[filtered_partida_consumo['nombreRecurso'] == recurso_consumo_seleccionada] if recurso_consumo_seleccionada else filtered_partida_consumo
 
-        selected = option_menu(menu_title=None, options=['Resumen', 'Flujo Económico', 'Uso Recursos'], icons=['list-ol', 'cash-coin', 'tools'], orientation='horizontal')
+#-------------------------------------------COSTOS (FILTROS FIN)------------------------------------------------------------------------------------------
+#-------------------------------------------COSTOS (SUBMENU INICIO)------------------------------------------------------------------------------------------
 
+        selected = option_menu(menu_title=None, options=['','Resumen', 'Flujo Económico', 'Uso Recursos'], icons=['house','list-ol', 'cash-coin', 'tools'], orientation='horizontal')
+
+#-------------------------------------------COSTOS (SUBMENU FIN)------------------------------------------------------------------------------------------
+
+#-------------------------------------------COSTOS (INDICADORES INICIO)------------------------------------------------------------------------------------------
+#----DATAFRAME PARA CONSUMOS-----
         data_consumo=pd.DataFrame(filtered_recurso_consumo)
-        suma_data_consumo=data_consumo.groupby('fecha')['total'].sum().reset_index()
-        suma_tipocosto_consumo=data_consumo.groupby('tipoCosto')['total'].sum().reset_index()
-        suma_area_consumo=data_consumo.groupby('codigoArea')['total'].sum().reset_index()
-        suma_partida_consumo=data_consumo.groupby('nombrePartida')['total'].sum().reset_index()
+        data_consumo['total'] = data_consumo['total'].astype(int)
+        data_consumo['precio'] = data_consumo['precio'].astype(int)
+        data_consumo['cantidad'] = data_consumo['cantidad'].astype(int)
+#-------------------------------------------------------------------------------------------------------------------------------------
         
-
-#GRAFICO CANTIDAD APIconsumo
+        suma_data_consumo = data_consumo.groupby('fecha')['total'].sum().reset_index()
+        suma_tipocosto_consumo = data_consumo.groupby('tipoCosto')['total'].sum().reset_index()
+        suma_area_consumo = data_consumo.groupby('codigoArea')['total'].sum().reset_index()
+        suma_partida_consumo = data_consumo.groupby('nombrePartida')['total'].sum().reset_index()       
              
-        filtered_data_consumos['fecha'] = pd.to_datetime(filtered_data_consumos['fecha'], format='%d/%m/%Y')
+        #suma_data_consumo['fecha'] = pd.to_datetime(suma_data_consumo['fecha'], format='%d/%m/%Y')
+
+        #hoy = datetime.now().date()
+        #ayer = hoy - timedelta(days=1)
+        #antes_ayer = hoy - timedelta(days=2)
+        #hoy_menos3 = hoy - timedelta(days=3)
         
-
-        hoy = datetime.now().strftime('%d-%m-%y')
-        ayer = datetime.now() - timedelta(days=1)
-        antes_ayer= datetime.now() - timedelta(days=2)
-        hoy_menos3= datetime.now() - timedelta(days=3)
-        fecha_ayer = ayer.strftime('%d-%m-%y')
-        fecha_antes_ayer= antes_ayer.strftime('%d-%m-%y')
-        fecha_hoy_menos3= hoy_menos3.strftime('%d-%m-%y')
-
-        df_hoy = filtered_data_consumos[filtered_data_consumos['fecha'] == hoy]
-        df_ayer = filtered_data_consumos[filtered_data_consumos['fecha'] == fecha_ayer]
-        df_antes_ayer= filtered_data_consumos[filtered_data_consumos['fecha'] == fecha_antes_ayer]
-        df_hoy_menos3= filtered_data_consumos[filtered_data_consumos['fecha'] == fecha_hoy_menos3]
-
-        suma_total_hoy = df_hoy['cantidad'].sum()
-        suma_total_ayer = df_ayer['total'].sum()
-        suma_total_antes_ayer = df_antes_ayer['total'].sum()
-        suma_total_hoy_menos3 = df_hoy_menos3['total'].sum()
-
-        #suma_total_hoy_menos3_formateada = "{:,}".format(suma_total_hoy_menos3)
-        #suma_total_hoy_menos3_formateada = f"{suma_total_hoy_menos3}"
-        #suma_total_antes_ayer_formateada = "{:,}".format(suma_total_antes_ayer)
-        #suma_total_antes_ayer_formateada = f"{suma_total_antes_ayer}"
-        #suma_total_ayer_formateada = "{:,}".format(suma_total_ayer)
-        #suma_total_ayer_formateada = f"{suma_total_ayer}"
-        #suma_total_hoy_formateada = "{:,}".format(suma_total_hoy)
-        #suma_total_hoy_formateada = f"{suma_total_hoy}"
-
-        delta_antes_ayer = ((suma_total_antes_ayer - suma_total_hoy_menos3) / suma_total_hoy_menos3) * 100
-        delta_ayer = ((suma_total_ayer - suma_total_antes_ayer) / suma_total_antes_ayer) * 100
-        delta_hoy = ((suma_total_hoy - suma_total_ayer) / suma_total_ayer) * 100
-
-        col1,col2,col3,col4 = st.columns([1,1,1,1])
-        with col1:
-            with st.container(border=True,height=130):
-                st.metric(label='Total Costo antes de ayer', value=suma_total_antes_ayer, delta=delta_antes_ayer, delta_color= "inverse")
+        #df_hoy = suma_data_consumo[suma_data_consumo['fecha'] == hoy]
+        #df_ayer = suma_data_consumo[suma_data_consumo['fecha'] == ayer]
+        #df_antes_ayer = suma_data_consumo[suma_data_consumo['fecha'] == antes_ayer]
+        #df_hoy_menos3 = suma_data_consumo[suma_data_consumo['fecha'] == hoy_menos3]
         
-        with col2:
-            with st.container(border=True, height=130):
-                st.metric(label='Total Costo ayer', value=suma_total_ayer, delta=delta_ayer, delta_color= "inverse")
-        
-        with col3:
-            with st.container(border=True, height=130):
-                st.metric(label='Total Costo hoy', value=suma_total_hoy, delta=delta_hoy, delta_color= "inverse")
-        
+        #suma_total_hoy = df_hoy['total'].sum()
+        #suma_total_ayer = df_ayer['total'].sum()
+        #suma_total_antes_ayer = df_antes_ayer['total'].sum()
+        #suma_total_hoy_menos3 = df_hoy_menos3['total'].sum()
+
+        col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
+        #with col1:
+            #st.metric(label='Total Costo antes de ayer', value=suma_total_antes_ayer)
+
+        #with col2:
+            #st.metric(label='Total Costo ayer', value=suma_total_ayer)
+
+        #with col3:
+            #st.metric(label='Total Costo hoy', value=suma_total_hoy)
+
         with col4:
-            with st.container(border=True, height=130):
-                total_cantidad_consumo = suma_partida_consumo['total'].sum()
-                st.metric(label='Total Costo', value=total_cantidad_consumo)
-                
+            total_suma_consumo = suma_data_consumo['total'].sum()
+            total_promedio_consumo = suma_data_consumo['total']
+            total_consumo= suma_data_consumo['total'].sum()
+            
 
-        grafico_costo= px.scatter(suma_data_consumo.set_index('fecha'))
-        st.plotly_chart(grafico_costo, theme=None, use_container_width=True, )
+#-------------------------------------------COSTOS (INDICADORES FIN)------------------------------------------------------------------------------------------
 
-#3 GRAFICOS CANTIDAD APIconsumo
+#-------------------------------------------COSTOS (GRAFICOS)------------------------------------------------------------------------------------------
 
-        col1,col2,col3 = st.columns([1,1,1])
-        with col1:
-            st.bar_chart(suma_tipocosto_consumo.set_index('tipoCosto'))
-        with col2:
-            st.bar_chart(suma_area_consumo.set_index('codigoArea'))
-        with col3:
-            st.bar_chart(suma_partida_consumo.set_index('nombrePartida'))
-                
+#----GRAFICO CONSUMOS---
+
+#-------------------------------------------COSTOS (RESUMEN INICIO)------------------------------------------------------------------------------------------
+
+        if selected == '':
+        
+            col1,col2,col3 = st.columns([1,1,1])   
+            with col3:     
+             with st.container(border=True, height=110):
+                st.metric(label= 'Total Consumos', value=f"{total_suma_consumo:,}")
+            
+            grafico_consumos= st.bar_chart(suma_data_consumo.set_index('fecha'))
+        
+            #grafico_costo= px.scatter(suma_data_consumo.set_index('fecha'))
+            #st.plotly_chart(grafico_costo, theme=None, use_container_width=True, )
 
 
+            col1,col2,col3 = st.columns([1,1,1])
+            with col1:
+                    st.bar_chart(suma_tipocosto_consumo.set_index('tipoCosto'))
+            with col2:
+                    st.bar_chart(suma_area_consumo.set_index('codigoArea'))
+            with col3:
+                    st.bar_chart(suma_partida_consumo.set_index('nombrePartida'))
 
 
+        if selected == 'Resumen':
 
+            tabla_resumen = data_consumo[['codigoArea', 'nombrePartida', 'unidad', 'cantidad', 'precio', 'total']]
+            tabla_resumen = tabla_resumen.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida', 'unidad':'Unidad', 'cantidad': 'Cantidad', 'precio': 'Precio', 'total': 'Total'})
+            tabla_resumen['Total'] = tabla_resumen['Total'].apply(lambda x: f"{x:,}")
+            tabla_resumen['Precio'] = tabla_resumen['Precio'].apply(lambda x: f"{x:,}")
+            
+            col1,col2,col3= st.columns([1,1,1])
+            #with col2:
+                #with st.container(border=True, height=110):
+                 #   st.metric(label= 'Total Consumos', value=f"{total_suma_consumo:,}")
+
+
+            with col3:
+                with st.container(border=True, height=110):
+                    st.metric(label= 'Total Consumos', value=f"{total_suma_consumo:,}")
+            
+            with st.container(border=True, height=600):
+                st.table(tabla_resumen)
+
+        if selected == 'Flujo Económico':
+
+            tabla_flujo_economico = data_consumo[['codigoArea', 'nombrePartida', 'total']]
+            tabla_flujo_economico = tabla_flujo_economico.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida', 'total': 'Total'})
+            tabla_flujo_economico['Total'] = tabla_flujo_economico['Total'].apply(lambda x: f"{x:,}")
+
+            
+            col1,col2,col3= st.columns([1,1,1])
+            #with col2:
+                #with st.container(border=True, height=110):
+                 #   st.metric(label= 'Total Consumos', value=f"{total_suma_consumo:,}")
+
+            with col3:
+                with st.container(border=True, height=110):
+                    st.metric(label= 'Total Consumos', value=f"{total_suma_consumo:,}")
+            
+            with st.container(border=True, height=600):
+                st.table(tabla_flujo_economico)
+
+        if selected == 'Uso Recursos':
+
+            tabla_uso_recurso = data_consumo[['codigoArea', 'nombrePartida', 'nombreRecurso', 'unidad', 'total']]
+            tabla_uso_recurso = tabla_uso_recurso.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida','nombreRecurso': 'Recurso', 'unidad':'Unidad', 'total': 'Total'})
+            tabla_uso_recurso['Total'] = tabla_uso_recurso['Total'].apply(lambda x: f"{x:,}")
+            
+            col1,col2,col3= st.columns([1,1,1])
+            #with col2:
+                #with st.container(border=True, height=110):
+                 #   st.metric(label= 'Total Consumos', value=f"{total_suma_consumo:,}")
+
+
+            with col3:
+                with st.container(border=True, height=110):
+                    st.metric(label= 'Total Consumos', value=f"{total_suma_consumo:,}")
+            
+            with st.container(border=True, height=600):
+                st.table(tabla_uso_recurso)
+
+
+#-------------------------------------------COSTOS FIN------------------------------------------------------------------------------------------
 
 
     if selected == 'Seguimiento':
-        st.title('Seguimiento')    
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#----------------PRUEBA TOTALES!!!!!!
+
+    
+        st.title('Seguimiento') 
+        APIobras = response_obras(p1, p2)
+        datos_obra = APIobras.json()['datos']
+    # Columnas que voy a llamar de 'datos'
+        columns_obra = ['codObra']
+    # Armar un nuevo DF para mostrar las columnas seleccionadas
+        filtered_obra = [{column: entry[column] for column in columns_obra} for entry in datos_obra]
+        filtered_data_obra = pd.DataFrame(filtered_obra)
+
+        col1,col2,col3,col4,col5,col6 = st.columns([1,1,1,1,1,1])
+        with col1:
+            par3=st.selectbox(label='Periodo', options=['2024','2023'], label_visibility='visible')
+            filtro_obra = (filtered_data_obra['codObra'].unique())
+        with col2:
+            par4=st.selectbox(label='Obra', options=[''] + list(filtro_obra), label_visibility='visible', placeholder='Obra')
+
+#LLAMADA APIconsumos
+        
+        APIconsumos = response_consumo(p1, p2, par3, par4)
+        datos = APIconsumos.json()['datos']
+        # Columnas que voy a llamar de 'datos'
+        columns = ['obra', 'cantidad', 'tipoCosto', 'codigoArea', 'nombrePartida', 'nombreRecurso', 'fecha', 'total']
+        # Armar un nuevo DF para mostrar las columnas seleccionadas
+        filtered = [{column: entry[column] for column in columns} for entry in datos]
+        df= pd.DataFrame(filtered)
+#DATA FRAME PARA HACER LOS CALCULOS DE CONSUMOS
+        
+        df['total'] = df['total'].astype(int) #transformar a numero entero el total
+        df['fecha'] = pd.to_datetime(df['fecha']) #transformar la fecha a tipo fecha      
+        hoy= datetime.now().date() #traer la fecha de hoy
+        df_hoy = df[df['fecha'].dt.date == hoy] #columna fecha sea igual a la fecha hoy
+        df_suma_hoy = df_hoy['total'].sum()
+        df_suma= df['total'].sum() #suma de la columna total
+        st.write(hoy)
+        st.write(df.dtypes) #muestra los tipos de las columnas
+        st.text(df_suma) #muestra la suma en texto
+        st.metric(label='Total Suma', value=f"{df_suma:,}") #muestra la suma como metrica
+        st.metric(label='Total Suma Hoy', value=f"{df_suma_hoy:,}") #muestra la suma como metrica de hoy
+
+
+        suma_df= df.groupby('fecha')['total'].sum().reset_index()
+        grafico_consumos=st.bar_chart(suma_df.set_index('fecha'))
+        
+        st.table(df)
+
+        
+
+
+
+
+       
 
 
 
