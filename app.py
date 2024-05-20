@@ -126,11 +126,10 @@ def main_interface():
     
         col1, col2, col3, col4 = st.columns([1, 1, 2, 2])
         with col1:
-            clases = (filtered_data_clases['nombreClase'].unique())
-            clase_a_excluir = 'Combustibles'
-            clases_sin_excluir = [nombreClase for nombreClase in clases if nombreClase != clase_a_excluir]
-            clase_seleccionada = st.selectbox(label='Clase', options=[''] + list(clases_sin_excluir), placeholder='Tipos de EPP')
-            filtered_data_clase = filtered_data_clases[filtered_data_clases['nombreClase'] == clase_seleccionada] if clase_seleccionada else filtered_data_clases
+            filtered_clases_epp= filtered_data_clases[filtered_data_clases['clase'].str.startswith('0404')]
+            nombre_clases_epp= filtered_clases_epp['nombreClase'].unique()
+            epp_seleccionado = st.selectbox(label='Tipo EPP', options=[''] + list(nombre_clases_epp), placeholder='Tipos de EPP')
+            filtered_data_clase = filtered_data_clases[filtered_data_clases['nombreClase'] == epp_seleccionado] if epp_seleccionado else filtered_data_clases
     
         with col2:
             obra = (filtered_data_clase['obra'].unique())
@@ -162,9 +161,10 @@ def main_interface():
         #CLICK MENU CANTIDAD, MONTO, DATOS
         if selected == 'Cantidad':
     #TOTAL CANTIDAD
-            data_bodega=pd.DataFrame(filtered_data_trabajador)
-            
-            data_bodega['cantidad'] = data_bodega['cantidad'].astype(int)
+            data_bodega=pd.DataFrame(filtered_data_trabajador)           
+            #data_bodega['cantidad'] = data_bodega['cantidad'].astype(int)
+            data_bodega['cantidad']=pd.to_numeric(data_bodega['cantidad'])
+            data_bodega['fecha'] = pd.to_datetime(data_bodega['fecha'], dayfirst=True).dt.date
             
             suma_data_bodega=data_bodega.groupby('fecha')['cantidad'].sum().reset_index()
             suma_obra_bodega=data_bodega.groupby('obra')['cantidad'].sum().reset_index()
@@ -200,6 +200,7 @@ def main_interface():
     #TOTAL MONTO
             data_bodega=pd.DataFrame(filtered_data_trabajador)
             data_bodega['subTotal'] = data_bodega['subTotal'].astype(int)
+            data_bodega['fecha'] = pd.to_datetime(data_bodega['fecha'], dayfirst=True).dt.date
             total_monto = data_bodega['subTotal'].sum()
             col1,col2,col3 = st.columns([1,1,1])
             with col3:
@@ -208,7 +209,7 @@ def main_interface():
     
     #GRAFICO MONTO    
             
-            graficoMonto = st.bar_chart(filtered_data_trabajador, x='fecha', y='subTotal', width=0, height=0, use_container_width=True)
+            graficoMonto = st.bar_chart(data_bodega, x='fecha', y='subTotal', width=0, height=0, use_container_width=True)
     
     #GRAFICOS OBRA, RECURSO, RECIBE MONTO
             
@@ -229,9 +230,8 @@ def main_interface():
 
         if selected == 'Ver Datos':
     #TABLA DATOS
-
-            with st.container(height=600):
-                st.table(filtered_data_trabajador)
+            datos_bodega= pd.DataFrame(filtered_data_trabajador)
+            st.dataframe(filtered_data_trabajador)
 
 #-------------------------------------------BODEGA (VER DATOS FIN)------------------------------------------------------------------------------------------
 
@@ -381,7 +381,7 @@ def main_interface():
             
             df_tabla_total= pd.DataFrame(tabla_total)
             df_tabla_total['Total']=pd.to_numeric(df_tabla_total['Total'])
-            df_tabla_total['Fecha']=pd.to_datetime(df_tabla_total['Fecha']).dt.date
+            df_tabla_total['Fecha'] = pd.to_datetime(df_tabla_total['Fecha'], dayfirst=True).dt.date
             
             pivot_df_total = df_tabla_total.pivot_table(index='Área', columns='Fecha', values='Total', aggfunc='sum', margins=True, margins_name='Total').fillna(0).astype(int)
             st.dataframe(pivot_df_total, width=1100)
@@ -435,7 +435,7 @@ def main_interface():
            
             df_flujo_economico= pd.DataFrame(tabla_flujo_economico)
             df_flujo_economico['Total']=pd.to_numeric(df_flujo_economico['Total'])
-            df_flujo_economico['Fecha']=pd.to_datetime(df_flujo_economico['Fecha']).dt.date
+            df_flujo_economico['Fecha'] = pd.to_datetime(df_flujo_economico['Fecha'], dayfirst=True).dt.date            
 
                # Crear la pivot table
             pivot_df_fe = df_flujo_economico.pivot_table(index=['Área', 'Partida'], columns='Fecha', values='Total', aggfunc='sum', margins=True, margins_name='Total').fillna(0).astype(int)
@@ -462,7 +462,7 @@ def main_interface():
            
             df_uso_recurso= pd.DataFrame(tabla_uso_recurso)
             df_uso_recurso['Total']=pd.to_numeric(df_uso_recurso['Total'])
-            df_uso_recurso['Fecha']=pd.to_datetime(df_uso_recurso['Fecha']).dt.date
+            df_uso_recurso['Fecha'] = pd.to_datetime(df_uso_recurso['Fecha'], dayfirst=True).dt.date
                # st.write(df_uso_recurso.dtypes)
 
                # Crear la pivot table
