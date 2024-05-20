@@ -88,7 +88,7 @@ def main_interface():
         
 #MENU DEL SIDEBAR
 
-        selected = option_menu(menu_title=None, options=['EPP', 'Costos', 'Kardex'], icons=['person-badge-fill', 'coin'])
+        selected = option_menu(menu_title=None, options=['EPP', 'Costos', 'Kardex', 'Maquinaria'], icons=['person-badge-fill', 'coin', 'receipt', 'truck-front'])
         p1 = st.selectbox(label='Cliente', options=['INCOPROV'], label_visibility='hidden', placeholder='Cliente')
         p2 = st.selectbox(label='Empresa', options=['INCOPROV', 'HGM'], label_visibility='hidden', placeholder='Empresa')
         
@@ -481,10 +481,13 @@ def main_interface():
 
     if selected == 'kardex':
 
+    
+        if selected == 'Maquinaria':
+
 
 #LLAMADA APIkardex.py
 
-        APIkardex = response(p1, p2,par3,kardex4,kardex5,kardex6)
+            APIkardex = response(p1, p2,par3,kardex4,kardex5,kardex6)
         data = APIbodega.json()['datos']
         # Columnas que voy a llamar de 'datos'
         selected_columns = ['obra', 'recibe', 'nombreRecurso', 'undRecurso', 'cantidad', 'precio', 'subTotal', 'clase', 'nombreClase', 'fecha']
