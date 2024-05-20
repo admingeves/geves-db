@@ -38,6 +38,23 @@ meses_dict_fin = {
     'Noviembre': '2024/01/11',
     'Diciembre': '2024/01/12'
 }
+# DICCIONARIO (FECHA CONSUMO)
+mese_dict_consumo = {
+    'Enero': '1',
+    'Febrero': '2',
+    'Marzo': '3',
+    'Abril': '4',
+    'Mayo': '5',
+    'Junio': '6',
+    'Julio': '7',
+    'Agosto': '8',
+    'Septiembre': '9',
+    'Octubre': '10',
+    'Noviembre': '11',
+    'Diciembre': '12'
+}
+
+
 
 #CONFIG PAGINA
 st.set_page_config(page_icon='📊', layout='wide', page_title='Dashboard')
@@ -71,7 +88,7 @@ def main_interface():
         
 #MENU DEL SIDEBAR
 
-        selected = option_menu(menu_title=None, options=['EPP', 'Costos'], icons=['person-badge-fill', 'coin'])
+        selected = option_menu(menu_title=None, options=['EPP', 'Costos', 'Kardex'], icons=['person-badge-fill', 'coin'])
         p1 = st.selectbox(label='Cliente', options=['INCOPROV'], label_visibility='hidden', placeholder='Cliente')
         p2 = st.selectbox(label='Empresa', options=['INCOPROV', 'HGM'], label_visibility='hidden', placeholder='Empresa')
         
@@ -82,7 +99,7 @@ def main_interface():
     if selected == 'EPP':
         st.title('EPP')
                
-        mes_inicio,mes_fin=st.select_slider(label='Rango Fecha Bodega', options=list(meses_dict.keys()), value=['Enero','Diciembre'], label_visibility='hidden', )
+        mes_inicio,mes_fin=st.select_slider(label='Rango Fecha Bodega', options=list(meses_dict.keys()), value=['Enero','Diciembre'], label_visibility='hidden' )
         fecha_inicio = meses_dict[mes_inicio]
         fecha_fin = meses_dict_fin[mes_fin]
         p4=fecha_inicio
@@ -240,7 +257,7 @@ def main_interface():
         filtered_data_obra = pd.DataFrame(filtered_obra)
         
         st.title('Costos')
-        col1,col2,col3,col4,col5,col6 = st.columns([1,1,1,1,1,1])
+        col1,col2,col3,col4,col5,col6 = st.columns([1,1,1,1,1,2])
         with col1:
             par3=st.selectbox(label='Periodo', options=['2024','2023'], label_visibility='visible')
             filtro_obra = (filtered_data_obra['codObra'].unique())
@@ -252,7 +269,7 @@ def main_interface():
         APIconsumos = response_consumo(p1, p2, par3, par4)
         datos = APIconsumos.json()['datos']
         # Columnas que voy a llamar de 'datos'
-        columns = ['obra', 'cantidad', 'tipoCosto', 'codigoArea', 'nombrePartida', 'nombreRecurso', 'fecha', 'total', 'unidad', 'precio']
+        columns = ['obra', 'cantidad', 'tipoCosto', 'codigoArea', 'nombrePartida', 'nombreRecurso', 'fecha', 'total', 'unidad', 'precio','mes']
         # Armar un nuevo DF para mostrar las columnas seleccionadas
         filtered = [{column: entry[column] for column in columns} for entry in datos]
 
@@ -283,7 +300,7 @@ def main_interface():
             recurso_consumo= (filtered_partida_consumo['nombreRecurso'].unique())
             recurso_consumo_seleccionada=st.selectbox(label='Recurso', options=[''] + list(recurso_consumo), placeholder='Nombre Recurso', label_visibility='visible')
             filtered_recurso_consumo = filtered_partida_consumo[filtered_partida_consumo['nombreRecurso'] == recurso_consumo_seleccionada] if recurso_consumo_seleccionada else filtered_partida_consumo
-
+            
 #-------------------------------------------COSTOS (FILTROS FIN)------------------------------------------------------------------------------------------
 #-------------------------------------------COSTOS (SUBMENU INICIO)------------------------------------------------------------------------------------------
 
@@ -293,6 +310,11 @@ def main_interface():
 
 #-------------------------------------------COSTOS (INDICADORES INICIO)------------------------------------------------------------------------------------------
 #----DATAFRAME PARA CONSUMOS-----
+        #fecha_consumo= (filtered_recurso_consumo['mes'].unique())
+        #fecha_consumo_seleccionado= st.select_slider(label='Mes', options=list(mese_dict_consumo.keys()))
+        #filtered_fecha_consumo = filtered_recurso_consumo[filtered_recurso_consumo['mes'] == fecha_consumo_seleccionado] if fecha_consumo_seleccionado else filtered_recurso_consumo
+        
+
         data_consumo=pd.DataFrame(filtered_recurso_consumo)
         data_consumo['total'] = data_consumo['total'].astype(int)
         data_consumo['precio'] = data_consumo['precio'].astype(int)
@@ -304,26 +326,28 @@ def main_interface():
         suma_area_consumo = data_consumo.groupby('codigoArea')['total'].sum().reset_index()
         suma_partida_consumo = data_consumo.groupby('nombrePartida')['total'].sum().reset_index()       
              
-        #suma_data_consumo['fecha'] = pd.to_datetime(suma_data_consumo['fecha'], format='%d/%m/%Y')
+        suma_data_consumo['fecha'] = pd.to_datetime(suma_data_consumo['fecha'], format='%d/%m/%Y')
 
-        #hoy = datetime.now().date()
-        #ayer = hoy - timedelta(days=1)
-        #antes_ayer = hoy - timedelta(days=2)
-        #hoy_menos3 = hoy - timedelta(days=3)
+        hoy = datetime.now().date()
+        ayer = hoy - timedelta(days=1)
+        antes_ayer = hoy - timedelta(days=2)
+        hoy_menos3 = hoy - timedelta(days=3)
         
-        #df_hoy = suma_data_consumo[suma_data_consumo['fecha'] == hoy]
-        #df_ayer = suma_data_consumo[suma_data_consumo['fecha'] == ayer]
-        #df_antes_ayer = suma_data_consumo[suma_data_consumo['fecha'] == antes_ayer]
-        #df_hoy_menos3 = suma_data_consumo[suma_data_consumo['fecha'] == hoy_menos3]
+        df_hoy = suma_data_consumo[suma_data_consumo['fecha'] == hoy]
+        df_ayer = suma_data_consumo[suma_data_consumo['fecha'] == ayer]
+        df_antes_ayer = suma_data_consumo[suma_data_consumo['fecha'] == antes_ayer]
+        df_hoy_menos3 = suma_data_consumo[suma_data_consumo['fecha'] == hoy_menos3]
         
-        #suma_total_hoy = df_hoy['total'].sum()
-        #suma_total_ayer = df_ayer['total'].sum()
-        #suma_total_antes_ayer = df_antes_ayer['total'].sum()
-        #suma_total_hoy_menos3 = df_hoy_menos3['total'].sum()
+        suma_total_hoy = df_hoy['total'].sum()
+        suma_total_ayer = df_ayer['total'].sum()
+        suma_total_antes_ayer = df_antes_ayer['total'].sum()
+        suma_total_hoy_menos3 = df_hoy_menos3['total'].sum()
 
         col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
         #with col1:
-            #st.metric(label='Total Costo antes de ayer', value=suma_total_antes_ayer)
+         #   st.text(hoy)
+          #  st.table(suma_data_consumo == '2024-02-10')
+           # st.text(df_hoy)
 
         #with col2:
             #st.metric(label='Total Costo ayer', value=suma_total_ayer)
@@ -352,7 +376,19 @@ def main_interface():
              with st.container(border=True, height=110):
                 st.metric(label= 'Total Consumos', value=f"{total_suma_consumo:,}")
             
-            grafico_consumos= st.bar_chart(suma_data_consumo.set_index('fecha'))
+            tabla_total = data_consumo[['codigoArea', 'total', 'fecha']]
+            tabla_total = tabla_total.rename(columns={'codigoArea': 'Área', 'total': 'Total', 'fecha':'Fecha'})
+            
+            df_tabla_total= pd.DataFrame(tabla_total)
+            df_tabla_total['Total']=pd.to_numeric(df_tabla_total['Total'])
+            df_tabla_total['Fecha']=pd.to_datetime(df_tabla_total['Fecha']).dt.date
+            
+            pivot_df_total = df_tabla_total.pivot_table(index='Área', columns='Fecha', values='Total', aggfunc='sum', margins=True, margins_name='Total').fillna(0).astype(int)
+            st.dataframe(pivot_df_total, width=1100)
+
+            df_tabla_total_suma=df_tabla_total['Total'].sum()
+            
+            grafico_consumos= st.bar_chart(df_tabla_total, x='Fecha', y='Total')
         
             #grafico_costo= px.scatter(suma_data_consumo.set_index('fecha'))
             #st.plotly_chart(grafico_costo, theme=None, use_container_width=True, )
@@ -369,70 +405,91 @@ def main_interface():
 
         if selected == 'Resumen':
 
-            tabla_resumen = data_consumo[['codigoArea', 'nombrePartida', 'unidad', 'cantidad', 'precio', 'total']]
-            tabla_resumen = tabla_resumen.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida', 'unidad':'Unidad', 'cantidad': 'Cantidad', 'precio': 'Precio', 'total': 'Total'})
-            tabla_resumen['Total'] = tabla_resumen['Total'].apply(lambda x: f"{x:,}")
-            tabla_resumen['Precio'] = tabla_resumen['Precio'].apply(lambda x: f"{x:,}")
-            
-            col1,col2,col3= st.columns([1,1,1])
-            #with col2:
-                #with st.container(border=True, height=110):
-                 #   st.metric(label= 'Total Consumos', value=f"{total_suma_consumo:,}")
+            tabla_resumen = data_consumo[['codigoArea', 'nombrePartida', 'nombreRecurso','unidad', 'cantidad', 'precio', 'total']]
+            tabla_resumen = tabla_resumen.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida', 'nombreRecurso': 'Recurso', 'unidad':'Unidad', 'cantidad': 'Cantidad', 'precio': 'Precio', 'total': 'Total'})
+            tabla_resumen['Total']=pd.to_numeric(tabla_resumen['Total'])
+            tabla_resumen['Precio']=pd.to_numeric(tabla_resumen['Precio'])
 
+            col1,col2,col3= st.columns([1,1,1])
 
             with col3:
                 with st.container(border=True, height=110):
                     st.metric(label= 'Total Consumos', value=f"{total_suma_consumo:,}")
-            
-            with st.container(border=True, height=600):
-                st.table(tabla_resumen)
+
+
+            with st.container(border=False, height=600):
+                st.dataframe(tabla_resumen, width=1100)
 
         if selected == 'Flujo Económico':
 
-            tabla_flujo_economico = data_consumo[['codigoArea', 'nombrePartida', 'total']]
-            tabla_flujo_economico = tabla_flujo_economico.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida', 'total': 'Total'})
-            tabla_flujo_economico['Total'] = tabla_flujo_economico['Total'].apply(lambda x: f"{x:,}")
+            tabla_flujo_economico = data_consumo[['codigoArea', 'nombrePartida', 'total', 'fecha']]
+            tabla_flujo_economico = tabla_flujo_economico.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida', 'total': 'Total', 'fecha':'Fecha'})
+            #tabla_flujo_economico['Total'] = tabla_flujo_economico['Total'].apply(lambda x: f"{x:,}")
 
-            
             col1,col2,col3= st.columns([1,1,1])
-            #with col2:
-                #with st.container(border=True, height=110):
-                 #   st.metric(label= 'Total Consumos', value=f"{total_suma_consumo:,}")
 
             with col3:
                 with st.container(border=True, height=110):
                     st.metric(label= 'Total Consumos', value=f"{total_suma_consumo:,}")
             
-            with st.container(border=True, height=600):
-                st.table(tabla_flujo_economico)
+           
+            df_flujo_economico= pd.DataFrame(tabla_flujo_economico)
+            df_flujo_economico['Total']=pd.to_numeric(df_flujo_economico['Total'])
+            df_flujo_economico['Fecha']=pd.to_datetime(df_flujo_economico['Fecha']).dt.date
+
+               # Crear la pivot table
+            pivot_df_fe = df_flujo_economico.pivot_table(index=['Área', 'Partida'], columns='Fecha', values='Total', aggfunc='sum', margins=True, margins_name='Total').fillna(0).astype(int)
+
+            formatted_pivot_df_fe = pivot_df_fe.applymap(lambda x: f'{x:,}')
+
+                # Mostrar la pivot table
+                
+            st.dataframe(formatted_pivot_df_fe, width=1100)            
+            
 
         if selected == 'Uso Recursos':
 
-            tabla_uso_recurso = data_consumo[['codigoArea', 'nombrePartida', 'nombreRecurso', 'unidad', 'total']]
-            tabla_uso_recurso = tabla_uso_recurso.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida','nombreRecurso': 'Recurso', 'unidad':'Unidad', 'total': 'Total'})
-            tabla_uso_recurso['Total'] = tabla_uso_recurso['Total'].apply(lambda x: f"{x:,}")
+            tabla_uso_recurso = data_consumo[['codigoArea', 'nombrePartida', 'nombreRecurso', 'unidad', 'total','fecha']]
+            tabla_uso_recurso = tabla_uso_recurso.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida','nombreRecurso': 'Recurso', 'unidad':'Unidad', 'total': 'Total', 'fecha':'Fecha'})
+            #tabla_uso_recurso['Total'] = tabla_uso_recurso['Total'].apply(lambda x: f"{x:,}")
             
             col1,col2,col3= st.columns([1,1,1])
-            #with col2:
-                #with st.container(border=True, height=110):
-                 #   st.metric(label= 'Total Consumos', value=f"{total_suma_consumo:,}")
-
 
             with col3:
                 with st.container(border=True, height=110):
                     st.metric(label= 'Total Consumos', value=f"{total_suma_consumo:,}")
             
-            with st.container(border=True, height=600):
-                st.table(tabla_uso_recurso)
+           
+            df_uso_recurso= pd.DataFrame(tabla_uso_recurso)
+            df_uso_recurso['Total']=pd.to_numeric(df_uso_recurso['Total'])
+            df_uso_recurso['Fecha']=pd.to_datetime(df_uso_recurso['Fecha']).dt.date
+               # st.write(df_uso_recurso.dtypes)
+
+               # Crear la pivot table
+            pivot_df = df_uso_recurso.pivot_table(index=['Área', 'Partida', 'Recurso', 'Unidad'], columns='Fecha', values='Total', aggfunc='sum', margins=True, margins_name='Total').fillna(0).astype(int)
+
+            formatted_pivot_df = pivot_df.applymap(lambda x: f'{x:,}')
+
+                # Mostrar la pivot table
+                
+            st.dataframe(formatted_pivot_df, width=1100)
+
 
 
 #-------------------------------------------COSTOS FIN------------------------------------------------------------------------------------------
 
 
-    if selected == 'Seguimiento':
+    if selected == 'kardex':
 
 
+#LLAMADA APIkardex.py
 
+        APIkardex = response(p1, p2,par3,kardex4,kardex5,kardex6)
+        data = APIbodega.json()['datos']
+        # Columnas que voy a llamar de 'datos'
+        selected_columns = ['obra', 'recibe', 'nombreRecurso', 'undRecurso', 'cantidad', 'precio', 'subTotal', 'clase', 'nombreClase', 'fecha']
+        # Armar un nuevo DF para mostrar las columnas seleccionadas
+        filtered_data = [{column: entry[column] for column in selected_columns} for entry in data]
 
 
 
