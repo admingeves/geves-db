@@ -187,9 +187,15 @@ def main_interface():
             # GRÁFICO CANTIDAD
                 suma_data_bodega_mes['mes_numerico'] = range(1, len(suma_data_bodega_mes) + 1)
                 fig = px.line(suma_data_bodega_mes, x='mes_numerico', y='cantidad', title='Cantidad por Mes')
-                fig.update_xaxes(title='Mes', tickvals=suma_data_bodega_mes['mes_numerico'], ticktext=suma_data_bodega_mes['mes'])
-                fig.update_xaxes(title_text='')
-                fig.update_yaxes(title_text='')
+                fig.update_xaxes(title='Mes', tickvals=suma_data_bodega_mes['mes_numerico'], ticktext=suma_data_bodega_mes['mes'], showgrid=False)
+                fig.update_layout(
+                    height=250,  # Ajustar la altura de la gráfica
+                    margin=dict(l=0, r=0, t=25, b=0),  # Ajustar los márgenes
+                    xaxis_title='',  # Quitar el título del eje x
+                    yaxis_title='',  # Quitar el título del eje y
+                    showlegend=True,  # Mostrar la leyenda
+                    yaxis=dict(showgrid=False)
+                )
                 st.plotly_chart(fig, use_container_width=True)
 
             with col2:
@@ -276,8 +282,14 @@ def main_interface():
                 suma_data_bodega_mes_monto['mes_numerico'] = range(1, len(suma_data_bodega_mes_monto) + 1)
                 fig = px.line(suma_data_bodega_mes_monto, x='mes_numerico', y='subTotal', title='Total Monto por Mes')
                 fig.update_xaxes(title='Mes', tickvals=suma_data_bodega_mes_monto['mes_numerico'], ticktext=suma_data_bodega_mes_monto['mes'])
-                fig.update_xaxes(title_text='')
-                fig.update_yaxes(title_text='')
+                fig.update_layout(
+                    height=250,  # Ajustar la altura de la gráfica
+                    margin=dict(l=0, r=0, t=25, b=0),  # Ajustar los márgenes
+                    xaxis_title='',  # Quitar el título del eje x
+                    yaxis_title='',  # Quitar el título del eje y
+                    showlegend=True,  # Mostrar la leyenda
+                    yaxis=dict(showgrid=False)
+                )
                 st.plotly_chart(fig, use_container_width=True)
 
             with col2:
@@ -463,7 +475,8 @@ def main_interface():
         suma_tipocosto_consumo = data_consumo.groupby('tipoCosto')['total'].sum().reset_index()
         suma_area_consumo = data_consumo.groupby('codigoArea')['total'].sum().reset_index()
         suma_partida_consumo = data_consumo.groupby('nombrePartida')['total'].sum().reset_index()
-        suma_data_consumo_mes = data_consumo.groupby('mes')['total'].sum().reset_index()      
+        suma_data_consumo_mes = data_consumo.groupby('mes')['total'].sum().reset_index()
+        suma_obra_consumo= data_consumo.groupby('obra')['total'].sum().reset_index()  
              
         suma_data_consumo['fecha'] = pd.to_datetime(suma_data_consumo['fecha'], dayfirst=True).dt.date
 
@@ -512,7 +525,7 @@ def main_interface():
 
             with col5:
             
-                tabla_flujo_total = data_consumo[['codigoArea', 'nombrePartida', 'total', 'fecha', 'mes']]
+                tabla_flujo_total = data_consumo[['codigoArea', 'nombrePartida', 'total', 'fecha', 'mes', 'obra']]
                 tabla_flujo_total = tabla_flujo_total.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida', 'total': 'Total', 'fecha':'Fecha', 'mes':'Mes'})            
                 df_flujo_total= pd.DataFrame(tabla_flujo_total)
                 df_flujo_total['Total']=pd.to_numeric(df_flujo_total['Total'])
@@ -556,28 +569,62 @@ def main_interface():
             suma_data_consumo_mes['mes_numerico'] = range(1, len(suma_data_consumo_mes) + 1)
             fig = px.line(suma_data_consumo_mes, x='mes_numerico', y='total', title='Total Costo por Mes')
             fig.update_xaxes(title='Meses', tickvals=suma_data_consumo_mes['mes_numerico'], ticktext=suma_data_consumo_mes['mes'])
-            fig.update_xaxes(title_text='')
-            fig.update_yaxes(title_text='')
+            fig.update_layout(
+                    height=250,  # Ajustar la altura de la gráfica
+                    margin=dict(l=0, r=0, t=25, b=0),  # Ajustar los márgenes
+                    xaxis_title='',  # Quitar el título del eje x
+                    yaxis_title='',  # Quitar el título del eje y
+                    showlegend=True,  # Mostrar la leyenda
+                    yaxis=dict(showgrid=False)
+                )
             st.plotly_chart(fig, use_container_width=True)
 
             col1,col2,col3 = st.columns([1,1,1])
             with col1:
-                    st.bar_chart(suma_tipocosto_consumo.set_index('tipoCosto'))
+                    fig1 = px.pie(suma_obra_consumo, values='total', names='obra', title='Distribución por Obra')
+                    fig1.update_layout(
+                    showlegend=False,  # Quitar la leyenda
+                    margin=dict(l=40, r=40, t=40, b=40)
+                    )
+                    st.plotly_chart(fig1, use_container_width=True)
+                    
             with col2:
-                    st.bar_chart(suma_area_consumo.set_index('codigoArea'))
+                    suma_area_consumo_sorted = suma_area_consumo.sort_values(by='total', ascending=False)
+                    top_5_suma_area_consumo = suma_area_consumo_sorted.head(5)
+                    fig2 = px.bar(top_5_suma_area_consumo, x='codigoArea', y='total', title='Distribución por Área')
+                    fig2.update_layout(
+                        showlegend=False,  # Quitar la leyenda si es necesario
+                        margin=dict(l=0, r=0, t=40, b=0)
+                    )
+                    fig2.update_xaxes(title_text='', showgrid=False)  # Quitar el título del eje x
+                    fig2.update_yaxes(title_text='', showgrid=False)  # Quitar el título del eje y
+                    st.plotly_chart(fig2, use_container_width=True)
+                    
             with col3:
-                    st.bar_chart(suma_partida_consumo.set_index('nombrePartida'))
+                    suma_partida_consumo_sorted = suma_partida_consumo.sort_values(by='total', ascending=False)
+                    top_5_suma_partida_consumo = suma_partida_consumo_sorted.head(5)
+                    fig3 = px.bar(top_5_suma_partida_consumo, x='nombrePartida', y='total', title='Distribución por Partida')
+                    fig3.update_layout(
+                        showlegend=False,  # Quitar la leyenda si es necesario
+                        margin=dict(l=0, r=0, t=40, b=0)
+                    )
+                    fig3.update_xaxes(title_text='', showgrid=False)  # Quitar el título del eje x
+                    fig3.update_yaxes(title_text='', showgrid=False)  # Quitar el título del eje y
+                    st.plotly_chart(fig3, use_container_width=True)
 
             st.dataframe(pivot_df_total, width=1100)
         if selected == 'Resumen':
 
-            tabla_resumen = data_consumo[['codigoArea', 'nombrePartida', 'nombreRecurso','unidad', 'cantidad', 'precio', 'total']]
+            tabla_resumen = data_consumo[['codigoArea', 'nombrePartida', 'nombreRecurso','unidad', 'cantidad', 'precio', 'total', 'mes']]
             tabla_resumen = tabla_resumen.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida', 'nombreRecurso': 'Recurso', 'unidad':'Unidad', 'cantidad': 'Cantidad', 'precio': 'Precio', 'total': 'Total'})
             tabla_resumen['Total']=pd.to_numeric(tabla_resumen['Total'])
             tabla_resumen['Precio']=pd.to_numeric(tabla_resumen['Precio'])
+            mes_inicio= pd.to_numeric(mes_inicio)
+            mes_fin= pd.to_numeric(mes_fin)
+            df_filtrado = tabla_resumen[(tabla_resumen['mes'] >= mes_inicio) & (tabla_resumen['mes'] <= mes_fin)]
 
             with st.container(border=False, height=600):
-                st.dataframe(tabla_resumen, width=1100)
+                st.dataframe(df_filtrado, width=1100)
 
         if selected == 'Flujo Económico':
 
