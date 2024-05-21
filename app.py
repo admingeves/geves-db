@@ -186,9 +186,12 @@ def main_interface():
             with col1:
             # GRÁFICO CANTIDAD
                 suma_data_bodega_mes['mes_numerico'] = range(1, len(suma_data_bodega_mes) + 1)
-                fig = px.area(suma_data_bodega_mes, x='mes_numerico', y='cantidad', title='Cantidad por Mes')
+                fig = px.line(suma_data_bodega_mes, x='mes_numerico', y='cantidad', title='Cantidad por Mes')
                 fig.update_xaxes(title='Mes', tickvals=suma_data_bodega_mes['mes_numerico'], ticktext=suma_data_bodega_mes['mes'])
+                fig.update_xaxes(title_text='')
+                fig.update_yaxes(title_text='')
                 st.plotly_chart(fig, use_container_width=True)
+
             with col2:
                 st.metric(label='Total Cantidad', value=f"{total_cantidad:,}")
 
@@ -235,7 +238,10 @@ def main_interface():
                     margin=dict(l=40, r=40, t=40, b=40)
                 )
                 st.plotly_chart(fig3, use_container_width=True)
-
+            cantidad = data_bodega[['obra', 'recibe', 'nombreRecurso', 'fecha', 'cantidad']]
+            tabla_total = cantidad.rename(columns={'obra': 'Obra', 'recibe': 'Trabajador', 'nombreRecurso':'EPP', 'fecha':'Fecha', 'cantidad':'Cantidad'})
+            pivot_df_cantidad = tabla_total.pivot_table(index=['Obra', 'Trabajador', 'EPP'], columns='Fecha', values='Cantidad', aggfunc='sum', margins=True, margins_name='Total').fillna(0).astype(int)
+            st.dataframe(pivot_df_cantidad, width=1100)
         
         elif selected == 'Monto':
             # TOTAL MONTO
@@ -268,8 +274,10 @@ def main_interface():
             with col1:
             # GRÁFICO MONTO
                 suma_data_bodega_mes_monto['mes_numerico'] = range(1, len(suma_data_bodega_mes_monto) + 1)
-                fig = px.area(suma_data_bodega_mes_monto, x='mes_numerico', y='subTotal', title='Total Costo por Mes')
+                fig = px.line(suma_data_bodega_mes_monto, x='mes_numerico', y='subTotal', title='Total Costo por Mes')
                 fig.update_xaxes(title='Mes', tickvals=suma_data_bodega_mes_monto['mes_numerico'], ticktext=suma_data_bodega_mes_monto['mes'])
+                fig.update_xaxes(title_text='')
+                fig.update_yaxes(title_text='')
                 st.plotly_chart(fig, use_container_width=True)
 
             with col2:
