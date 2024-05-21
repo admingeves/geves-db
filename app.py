@@ -407,7 +407,7 @@ def main_interface():
         APIconsumos = response_consumo(p1, p2, par3, par4)
         datos = APIconsumos.json()['datos']
         # Columnas que voy a llamar de 'datos'
-        columns = ['obra', 'cantidad', 'tipoCosto', 'codigoArea', 'nombrePartida', 'nombreRecurso', 'fecha', 'total', 'unidad', 'precio','mes']
+        columns = ['obra', 'cantidad', 'tipoCosto', 'codigoArea', 'nombrePartida', 'nombreRecurso', 'fecha', 'total', 'unidad', 'precio','mes', 'tipoDoc']
         # Armar un nuevo DF para mostrar las columnas seleccionadas
         filtered = [{column: entry[column] for column in columns} for entry in datos]
 
@@ -416,8 +416,8 @@ def main_interface():
 
 #DATA FRAME PARA HACER LOS CALCULOS DE CONSUMOS
 
-        filtered_data_consumos = pd.DataFrame(filtered)
-        
+        filtered_data_consumos_con_transferencias = pd.DataFrame(filtered)
+        filtered_data_consumos= filtered_data_consumos_con_transferencias[~filtered_data_consumos_con_transferencias['tipoDoc'].str.startswith('Transferencia Obra')]
  #-------------------------------------------COSTOS (FILTROS INICIO)------------------------------------------------------------------------------------------
        
 #FILTROS APIconsumos
