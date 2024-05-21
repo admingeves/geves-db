@@ -110,24 +110,23 @@ def main_interface():
         APIbodega = response(p1, p2, p4, p5)
         data = APIbodega.json()['datos']
         # Columnas que voy a llamar de 'datos'
-        selected_columns = ['obra', 'recibe', 'nombreRecurso', 'undRecurso', 'cantidad', 'precio', 'subTotal', 'clase', 'nombreClase', 'fecha']
+        selected_columns = ['obra', 'recibe', 'nombreRecurso', 'undRecurso', 'cantidad', 'precio', 'subTotal', 'clase', 'nombreClase', 'fecha', 'mes']
         # Armar un nuevo DF para mostrar las columnas seleccionadas
         filtered_data = [{column: entry[column] for column in selected_columns} for entry in data]
-
+        filtered_df=pd.DataFrame(filtered_data)
     
 #RESULTADO APIbodega.py (DATOS)
 
 #-------------------------------------------BODEGA (FILTROS INICIO)------------------------------------------------------------------------------------------
 
     #FILTRO DATOS API CLASE, OBRA, RECURSO y RECIBE
-
-        filtered_data_clases = pd.DataFrame(filtered_data)
+        filtered_clases_epp= filtered_df[filtered_df['clase'].str.startswith('0404')]
+        filtered_data_clases = pd.DataFrame(filtered_clases_epp)
     
         col1, col2, col3, col4 = st.columns([1, 1, 2, 2])
         with col1:
-            filtered_clases_epp= filtered_data_clases[filtered_data_clases['clase'].str.startswith('0404')]
-            nombre_clases_epp= filtered_clases_epp['nombreClase'].unique()
-            epp_seleccionado = st.selectbox(label='Tipo EPP', options=[''] + list(nombre_clases_epp), placeholder='Tipos de EPP')
+            nombre_clases_epp= filtered_data_clases['nombreClase'].unique()
+            epp_seleccionado = st.selectbox(label='Clase EPP', options=[''] + list(nombre_clases_epp), placeholder='Clases EPP')
             filtered_data_clase = filtered_data_clases[filtered_data_clases['nombreClase'] == epp_seleccionado] if epp_seleccionado else filtered_data_clases
     
         with col2:
@@ -150,28 +149,29 @@ def main_interface():
 #-------------------------------------------BODEGA (SUBMENU INICIO)------------------------------------------------------------------------------------------
     
     #MENU RESUMEN, FLUJO ECONOMICO, USO RECURSO
-        
         selected = option_menu(menu_title=None, options=['Cantidad', 'Monto', 'Ver Datos'], icons=['123', 'cash-coin', 'database'], orientation='horizontal')
 
 #-------------------------------------------BODEGA (SUBMENU FIN------------------------------------------------------------------------------------------
     
 #-------------------------------------------BODEGA (CANTIDAD INICIO)------------------------------------------------------------------------------------------
-  
-        #CLICK MENU CANTIDAD, MONTO, DATOS
+
+
         if selected == 'Cantidad':
-    #TOTAL CANTIDAD
-            data_bodega=pd.DataFrame(filtered_data_trabajador)           
-            #data_bodega['cantidad'] = data_bodega['cantidad'].astype(int)
-            data_bodega['cantidad']=pd.to_numeric(data_bodega['cantidad'])
+            # TOTAL CANTIDAD
+            data_bodega = pd.DataFrame(filtered_data_trabajador)
+            data_bodega['cantidad'] = pd.to_numeric(data_bodega['cantidad'])
             data_bodega['fecha'] = pd.to_datetime(data_bodega['fecha'], dayfirst=True).dt.date
-            
-            suma_data_bodega=data_bodega.groupby('fecha')['cantidad'].sum().reset_index()
-            suma_obra_bodega=data_bodega.groupby('obra')['cantidad'].sum().reset_index()
-            suma_recibe_bodega=data_bodega.groupby('recibe')['cantidad'].sum().reset_index()
-            suma_recurso_bodega=data_bodega.groupby('nombreRecurso')['cantidad'].sum().reset_index()            
+            data_bodega['mes'] = pd.to_numeric(data_bodega['mes'])
+
+            suma_data_bodega = data_bodega.groupby('fecha')['cantidad'].sum().reset_index()
+            suma_data_bodega_mes = data_bodega.groupby('mes')['cantidad'].sum().reset_index()
+            suma_obra_bodega = data_bodega.groupby('obra')['cantidad'].sum().reset_index()
+            suma_recibe_bodega = data_bodega.groupby('recibe')['cantidad'].sum().reset_index()
+            suma_recurso_bodega = data_bodega.groupby('nombreRecurso')['cantidad'].sum().reset_index()
 
             total_cantidad = data_bodega['cantidad'].sum()
-            
+
+            col1,col2= st.columns([6,1])
             st.markdown("""
             <style>
             div[data-testid="metric-container"] {
@@ -183,35 +183,75 @@ def main_interface():
             }
             </style>
             """, unsafe_allow_html=True)
-            col1,col2,col3 = st.columns([2,3,1])
-            with col3:
+            with col1:
+            # GRÁFICO CANTIDAD
+                suma_data_bodega_mes['mes_numerico'] = range(1, len(suma_data_bodega_mes) + 1)
+                fig = px.area(suma_data_bodega_mes, x='mes_numerico', y='cantidad', title='Cantidad por Mes')
+                fig.update_xaxes(title='Mes', tickvals=suma_data_bodega_mes['mes_numerico'], ticktext=suma_data_bodega_mes['mes'])
+                st.plotly_chart(fig, use_container_width=True)
+            with col2:
                 st.metric(label='Total Cantidad', value=f"{total_cantidad:,}")
-            
-        
-    #GRAFICO CANTIDAD 
 
-            graficoCantidad=st.bar_chart(suma_data_bodega.set_index('fecha'))
-    
-    #GRAFICOS OBRA, RECURSO, RECIBE
-            col1, col2, col3 = st.columns([1, 1, 1])
+            # GRÁFICOS OBRA, RECIBE, RECURSO
+            col1, col2, col3 = st.columns(3)
+
             with col1:
-                graficoObra = st.bar_chart(suma_obra_bodega.set_index('obra'))
+                fig1 = px.pie(suma_obra_bodega, values='cantidad', names='obra', title='Distribución por Obra')
+                fig1.update_layout(legend=dict(
+                    orientation="h",  # Orientación horizontal
+                    yanchor="bottom",  # Anclar en la parte inferior
+                    y=-0.2,  # Ajustar la posición vertical (puedes cambiar este valor para ajustar la posición)
+                    xanchor="center",  # Anclar en el centro horizontal
+                    x=0.5  # Centrar horizontalmente
+                    ),
+                    margin=dict(l=40, r=40, t=40, b=40)
+                )
+                st.plotly_chart(fig1, use_container_width=True)
+
             with col2:
-                graficoRecibe = st.bar_chart(suma_recibe_bodega.set_index('recibe'))
+                top_5_recibe = suma_recibe_bodega.nlargest(5, 'cantidad')
+                fig2 = px.pie(top_5_recibe, values='cantidad', names='recibe', title='Top 5 Trabajadores por Cantidad')
+                fig2.update_layout(legend=dict(
+                    orientation="h",  # Orientación horizontal
+                    yanchor="bottom",  # Anclar en la parte inferior
+                    y=-0.2,  # Ajustar la posición vertical (puedes cambiar este valor para ajustar la posición)
+                    xanchor="center",  # Anclar en el centro horizontal
+                    x=0.5  # Centrar horizontalmente
+                    ),
+                    margin=dict(l=40, r=40, t=40, b=40)
+                )
+                st.plotly_chart(fig2, use_container_width=True)
+
             with col3:
-                graficoRecurso = st.bar_chart(suma_recurso_bodega.set_index('nombreRecurso'))
+                top_5_epp = suma_recurso_bodega.nlargest(5, 'cantidad')
+                fig3 = px.pie(top_5_epp, values='cantidad', names='nombreRecurso', title='Top 5 EPP por Cantidad')
+                fig3.update_layout(legend=dict(
+                    orientation="h",  # Orientación horizontal
+                    yanchor="bottom",  # Anclar en la parte inferior
+                    y=-0.2,  # Ajustar la posición vertical (puedes cambiar este valor para ajustar la posición)
+                    xanchor="center",  # Anclar en el centro horizontal
+                    x=0.5  # Centrar horizontalmente
+                    ),
+                    margin=dict(l=40, r=40, t=40, b=40)
+                )
+                st.plotly_chart(fig3, use_container_width=True)
 
-#-------------------------------------------BODEGA (CANTIDAD FIN)------------------------------------------------------------------------------------------
+        
+        elif selected == 'Monto':
+            # TOTAL MONTO
+            data_bodega_monto = pd.DataFrame(filtered_data_trabajador)
+            data_bodega_monto['subTotal'] = pd.to_numeric(data_bodega_monto['subTotal'])
+            data_bodega_monto['fecha'] = pd.to_datetime(data_bodega_monto['fecha'], dayfirst=True).dt.date
+            data_bodega_monto['mes'] = pd.to_numeric(data_bodega_monto['mes'])
 
-#-------------------------------------------BODEGA (MONTO INICIO)------------------------------------------------------------------------------------------
+            suma_data_bodega_monto = data_bodega_monto.groupby('fecha')['subTotal'].sum().reset_index()
+            suma_data_bodega_mes_monto = data_bodega_monto.groupby('mes')['subTotal'].sum().reset_index()
+            suma_obra_bodega_monto = data_bodega_monto.groupby('obra')['subTotal'].sum().reset_index()
+            suma_recibe_bodega_monto = data_bodega_monto.groupby('recibe')['subTotal'].sum().reset_index()
+            suma_recurso_bodega_monto = data_bodega_monto.groupby('nombreRecurso')['subTotal'].sum().reset_index()
 
-        if selected == 'Monto':
-    #TOTAL MONTO
-            data_bodega=pd.DataFrame(filtered_data_trabajador)
-            data_bodega['subTotal'] = data_bodega['subTotal'].astype(int)
-            data_bodega['fecha'] = pd.to_datetime(data_bodega['fecha'], dayfirst=True).dt.date
-            total_monto = data_bodega['subTotal'].sum()
-            
+            total_monto = data_bodega_monto['subTotal'].sum()
+
             st.markdown("""
             <style>
             div[data-testid="metric-container"] {
@@ -223,33 +263,68 @@ def main_interface():
             }
             </style>
             """, unsafe_allow_html=True)
-            col1,col2,col3 = st.columns([2,3,1])
-            with col3:
-                st.metric(label='Total Monto', value=f"{total_monto:,}")
-    
-    #GRAFICO MONTO    
+            col1,col2= st.columns([6,1])
             
-            graficoMonto = st.bar_chart(data_bodega, x='fecha', y='subTotal', width=0, height=0, use_container_width=True)
-    
-    #GRAFICOS OBRA, RECURSO, RECIBE MONTO
-            
-            col1, col2, col3 = st.columns([1, 1, 1])
             with col1:
-                graficoObraMonto = st.bar_chart(filtered_data_trabajador, x='obra', y='subTotal', width=0, height=0, use_container_width=True)
-    
+            # GRÁFICO MONTO
+                suma_data_bodega_mes_monto['mes_numerico'] = range(1, len(suma_data_bodega_mes_monto) + 1)
+                fig = px.area(suma_data_bodega_mes_monto, x='mes_numerico', y='subTotal', title='Total Costo por Mes')
+                fig.update_xaxes(title='Mes', tickvals=suma_data_bodega_mes_monto['mes_numerico'], ticktext=suma_data_bodega_mes_monto['mes'])
+                st.plotly_chart(fig, use_container_width=True)
+
             with col2:
-                graficoRecibeMonto = st.bar_chart(filtered_data_trabajador, x='recibe', y='subTotal', width=0, height=0, use_container_width=True)
+                st.metric(label='Total Monto', value=f"{total_monto:,}")
+
+
+            # GRÁFICOS OBRA, RECIBE, RECURSO MONTO
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                fig1 = px.pie(suma_obra_bodega_monto, values='subTotal', names='obra', title='Distribución por Obra')
+                fig1.update_layout(legend=dict(
+                    orientation="h",  # Orientación horizontal
+                    yanchor="bottom",  # Anclar en la parte inferior
+                    y=-0.2,  # Ajustar la posición vertical (puedes cambiar este valor para ajustar la posición)
+                    xanchor="center",  # Anclar en el centro horizontal
+                    x=0.5  # Centrar horizontalmente
+                    ),
+                    margin=dict(l=40, r=40, t=40, b=40)
+                )
+                st.plotly_chart(fig1, use_container_width=True)
+
+            with col2:
+                top_5_recibe = suma_recibe_bodega_monto.nlargest(5, 'subTotal')
+                fig2 = px.pie(top_5_recibe, values='subTotal', names='recibe', title='Top 5 Trabajadores por Costo')
+                fig2.update_layout(legend=dict(
+                    orientation="h",  # Orientación horizontal
+                    yanchor="bottom",  # Anclar en la parte inferior
+                    y=-0.2,  # Ajustar la posición vertical (puedes cambiar este valor para ajustar la posición)
+                    xanchor="center",  # Anclar en el centro horizontal
+                    x=0.5  # Centrar horizontalmente
+                    ),
+                    margin=dict(l=40, r=40, t=40, b=40)
+                )
+                st.plotly_chart(fig2, use_container_width=True)
+
             with col3:
-                graficoRecursoMonto = st.bar_chart(filtered_data_trabajador, x='nombreRecurso', y='subTotal', width=0, height=0, use_container_width=True)
+                top_5_epp = suma_recurso_bodega_monto.nlargest(5, 'subTotal')
+                fig3 = px.pie(top_5_epp, values='subTotal', names='nombreRecurso', title='Top 5 EPP por Costo')
+                fig3.update_layout(legend=dict(
+                    orientation="h",  # Orientación horizontal
+                    yanchor="bottom",  # Anclar en la parte inferior
+                    y=-0.2,  # Ajustar la posición vertical (puedes cambiar este valor para ajustar la posición)
+                    xanchor="center",  # Anclar en el centro horizontal
+                    x=0.5  # Centrar horizontalmente
+                    ),
+                    margin=dict(l=40, r=40, t=40, b=40)
+                )
+                st.plotly_chart(fig3, use_container_width=True)
 
-#-------------------------------------------BODEGA (MONTO FIN)------------------------------------------------------------------------------------------
-
-#-------------------------------------------BODEGA (VER DATOS INICIO)------------------------------------------------------------------------------------------
-
-        if selected == 'Ver Datos':
-    #TABLA DATOS            
-            datos_bodega= pd.DataFrame(filtered_data_trabajador).reset_index(drop=True)
-            st.dataframe(filtered_data_trabajador)
+        elif selected == 'Ver Datos':
+            # TABLA DATOS
+            datos_bodega = pd.DataFrame(filtered_data_trabajador)
+            datos_bodega = filtered_data_trabajador[['obra', 'recibe', 'nombreRecurso', 'undRecurso', 'cantidad', 'precio', 'subTotal', 'fecha', 'mes']]
+            st.dataframe(datos_bodega, width=1000)
 
 #-------------------------------------------BODEGA (VER DATOS FIN)------------------------------------------------------------------------------------------
 
@@ -432,9 +507,9 @@ def main_interface():
             pivot_df_total = df_filtrado.pivot_table(index='Área', columns='Fecha', values='Total', aggfunc='sum', margins=True, margins_name='Total').fillna(0).astype(int)
             st.dataframe(pivot_df_total, width=1100)
 
-            df_tabla_total_suma=df_tabla_total['Total'].sum()
-            
-            grafico_consumos= st.bar_chart(df_tabla_total, x='Fecha', y='Total')
+            df_tabla_total['Total']=df_tabla_total['Total'].sum()
+
+            grafico_consumos= st.bar_chart(df_tabla_total, x='Mes', y='Total')
 
             col1,col2,col3 = st.columns([1,1,1])
             with col1:
