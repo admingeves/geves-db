@@ -1,12 +1,15 @@
 import pandas as pd
 import streamlit as st
+import numpy as np
+import streamlit_authenticator as stauth
+import yaml
+import plotly.express as px
 from streamlit_option_menu import option_menu
 from APIbodega import response
 from APIconsumos import response_consumo
 from APIobras import response_obras
-import plotly.express as px
 from datetime import datetime, timedelta
-import numpy as np
+
 
 
 # DICCIONARIO p4 (FECHA INICIO)
@@ -58,24 +61,25 @@ mese_dict_consumo = {
 #CONFIG PAGINA
 st.set_page_config(page_icon='📊', layout='wide', page_title='Dashboard')
 
-#FUNCION PARA PANTALLA DE INICIO DE SESIÓN
 def show_login_form():
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
         with st.form(key='login_form'):
-            logo_geves = st.image('assets/geves.png')
+            st.image('assets/geves.png')
             username = st.text_input(label="Usuario", key='username', label_visibility='hidden', placeholder='Usuario')
             password = st.text_input("Contraseña", type="password", key='password', label_visibility='hidden', placeholder='Contraseña')
             submit_button = st.form_submit_button(label='Iniciar Sesión')
             if submit_button:
                 if username == "admin" and password == "admin1111":
                     st.session_state.logged_in = True
+                    st.session_state.show_login = False
                 else:
                     st.error("Usuario/Contraseña incorrecto")
 
 # FUNCION PARA CERRAR SESIÓN
 def logout():
     st.session_state.logged_in = False
+    st.session_state.show_login = True
 
 #FUNCION INTERFAZ PRINCIPAL
 def main_interface():
@@ -456,11 +460,10 @@ def main_interface():
 
 #-------------------------------------------COSTOS (LLAMADA APIS FIN)------------------------------------------------------------------------------------------
 
+        if filtered:
 
-#DATA FRAME PARA HACER LOS CALCULOS DE CONSUMOS
-
-        filtered_data_consumos_con_transferencias = pd.DataFrame(filtered)
-        filtered_data_consumos= filtered_data_consumos_con_transferencias[~filtered_data_consumos_con_transferencias['tipoDoc'].str.startswith('Transferencia Obra')]
+            filtered_data_consumos_con_transferencias = pd.DataFrame(filtered)
+            filtered_data_consumos= filtered_data_consumos_con_transferencias[~filtered_data_consumos_con_transferencias['tipoDoc'].str.startswith('Transferencia Obra')]
  #-------------------------------------------COSTOS (FILTROS INICIO)------------------------------------------------------------------------------------------
        
 #FILTROS APIconsumos
@@ -559,9 +562,20 @@ def main_interface():
         </style>
         """, unsafe_allow_html=True)
 
-        variacion_porcentual_hoy = ((suma_total_hoy - suma_total_ayer) / suma_total_ayer) * 100
-        variacion_porcentual_ayer = ((suma_total_ayer - suma_total_antes_ayer) / suma_total_antes_ayer) * 100
-        variacion_porcentual_antes_ayer = ((suma_total_antes_ayer - suma_total_hoy_menos3) / suma_total_hoy_menos3) * 100
+        if suma_total_ayer > 0:
+            variacion_porcentual_hoy = ((suma_total_hoy - suma_total_ayer) / suma_total_ayer) * 100
+        else:
+            variacion_porcentual_hoy = 0  
+
+        if suma_total_antes_ayer > 0:
+            variacion_porcentual_ayer = ((suma_total_ayer - suma_total_antes_ayer) / suma_total_antes_ayer) * 100
+        else:
+            variacion_porcentual_ayer = 0  
+
+        if suma_total_hoy_menos3 > 0:
+            variacion_porcentual_antes_ayer = ((suma_total_antes_ayer - suma_total_hoy_menos3) / suma_total_hoy_menos3) * 100
+        else:
+            variacion_porcentual_antes_ayer = 0 
 
         with st.container(border=False):
         
@@ -726,20 +740,16 @@ def main_interface():
                 
             st.dataframe(formatted_pivot_df, width=1100)
 
-
+        else:
+            st.write('No existe costo con los filtros seleccionados')
 
 #-------------------------------------------COSTOS FIN------------------------------------------------------------------------------------------
 
 
     if selected == 'kardex':
+        #LLAMADA APIkardex.py
 
-    
-        if selected == 'Maquinaria':
-
-
-#LLAMADA APIkardex.py
-
-            APIkardex = response(p1, p2,par3,kardex4,kardex5,kardex6)
+        APIkardex = response(p1, p2,par3,kardex4,kardex5,kardex6)
         data = APIbodega.json()['datos']
         # Columnas que voy a llamar de 'datos'
         selected_columns = ['obra', 'recibe', 'nombreRecurso', 'undRecurso', 'cantidad', 'precio', 'subTotal', 'clase', 'nombreClase', 'fecha']
@@ -750,71 +760,8 @@ def main_interface():
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#----------------PRUEBA TOTALES!!!!!!
-
-    
-        st.title('Seguimiento') 
-        APIobras = response_obras(p1, p2)
-        datos_obra = APIobras.json()['datos']
-    # Columnas que voy a llamar de 'datos'
-        columns_obra = ['codObra']
-    # Armar un nuevo DF para mostrar las columnas seleccionadas
-        filtered_obra = [{column: entry[column] for column in columns_obra} for entry in datos_obra]
-        filtered_data_obra = pd.DataFrame(filtered_obra)
-
-        col1,col2,col3,col4,col5,col6 = st.columns([1,1,1,1,1,1])
-        with col1:
-            par3=st.selectbox(label='Periodo', options=['2024','2023'], label_visibility='visible')
-            filtro_obra = (filtered_data_obra['codObra'].unique())
-        with col2:
-            par4=st.selectbox(label='Obra', options=[''] + list(filtro_obra), label_visibility='visible', placeholder='Obra')
-
-#LLAMADA APIconsumos
-        
-        APIconsumos = response_consumo(p1, p2, par3, par4)
-        datos = APIconsumos.json()['datos']
-        # Columnas que voy a llamar de 'datos'
-        columns = ['obra', 'cantidad', 'tipoCosto', 'codigoArea', 'nombrePartida', 'nombreRecurso', 'fecha', 'total']
-        # Armar un nuevo DF para mostrar las columnas seleccionadas
-        filtered = [{column: entry[column] for column in columns} for entry in datos]
-        df= pd.DataFrame(filtered)
-#DATA FRAME PARA HACER LOS CALCULOS DE CONSUMOS
-        
-        df['total'] = df['total'].astype(int) #transformar a numero entero el total
-        df['fecha'] = pd.to_datetime(df['fecha']) #transformar la fecha a tipo fecha      
-        hoy= datetime.now().date() #traer la fecha de hoy
-        df_hoy = df[df['fecha'].dt.date == hoy] #columna fecha sea igual a la fecha hoy
-        df_suma_hoy = df_hoy['total'].sum()
-        df_suma= df['total'].sum() #suma de la columna total
-        st.write(hoy)
-        st.write(df.dtypes) #muestra los tipos de las columnas
-        st.text(df_suma) #muestra la suma en texto
-        st.metric(label='Total Suma', value=f"{df_suma:,}") #muestra la suma como metrica
-        st.metric(label='Total Suma Hoy', value=f"{df_suma_hoy:,}") #muestra la suma como metrica de hoy
-
-
-        suma_df= df.groupby('fecha')['total'].sum().reset_index()
-        grafico_consumos=st.bar_chart(suma_df.set_index('fecha'))
-        
-        st.table(df)
-
-        
-
+    if selected == 'Maquinaria':
+            st.table()
 
 
 
@@ -826,15 +773,15 @@ def main_interface():
 
 
 
-# Comprobación de estado de sesión
+# Inicializar el estado de la sesión
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
 if "show_login" not in st.session_state:
     st.session_state.show_login = False
 
+        # Comprobación del estado de la sesión y mostrar la interfaz correspondiente
 if st.session_state.logged_in:
-    main_interface()
+            main_interface()
 else:
-    st.session_state.show_login = True
-    show_login_form()
+            show_login_form()
