@@ -467,7 +467,7 @@ def main_interface():
  #-------------------------------------------COSTOS (FILTROS INICIO)------------------------------------------------------------------------------------------
        
 #FILTROS APIconsumos
-        st.markdown(
+            st.markdown(
             """
             <style>
             .stSlider {
@@ -487,261 +487,262 @@ def main_interface():
             unsafe_allow_html=True
         )
 
-        with col3:
-            t_costo=(filtered_data_consumos['tipoCosto'].unique())
-            t_costo_seleccionado=st.selectbox(label='Tipo Costo', options=[''] + list(t_costo), placeholder='Tipo de Costos', label_visibility='visible' )
-            filtered_t_costo = filtered_data_consumos[filtered_data_consumos['tipoCosto'] == t_costo_seleccionado] if t_costo_seleccionado else filtered_data_consumos
-        with col4:
-            area_consumo= (filtered_t_costo['codigoArea'].unique())
-            area_consumo_seleccionada=st.selectbox(label='Área', options=[''] + list(area_consumo), placeholder='Nombre Área', label_visibility='visible')
-            filtered_area_consumo = filtered_t_costo[filtered_t_costo['codigoArea'] == area_consumo_seleccionada] if area_consumo_seleccionada else filtered_t_costo
-        with col5:
-            partida_consumo= (filtered_area_consumo['nombrePartida'].unique())
-            partida_consumo_seleccionada=st.selectbox(label='Partida', options=[''] + list(partida_consumo), placeholder='Nombre Partida', label_visibility='visible')
-            filtered_partida_consumo = filtered_area_consumo[filtered_area_consumo['nombrePartida'] == partida_consumo_seleccionada] if partida_consumo_seleccionada else filtered_area_consumo
-        with col6:
-            recurso_consumo= (filtered_partida_consumo['nombreRecurso'].unique())
-            recurso_consumo_seleccionada=st.selectbox(label='Recurso', options=[''] + list(recurso_consumo), placeholder='Nombre Recurso', label_visibility='visible')
-            filtered_recurso_consumo = filtered_partida_consumo[filtered_partida_consumo['nombreRecurso'] == recurso_consumo_seleccionada] if recurso_consumo_seleccionada else filtered_partida_consumo
-            
-#-------------------------------------------COSTOS (FILTROS FIN)------------------------------------------------------------------------------------------
-#-------------------------------------------COSTOS (SUBMENU INICIO)------------------------------------------------------------------------------------------
-
-        mes_inicio,mes_fin=st.select_slider(label='Rango Fecha Consumos', options=['1','2','3','4','5','6','7','8','9','10','11','12'], value=['1','12'], label_visibility='hidden' )
-        selected = option_menu(menu_title=None, options=['','Resumen', 'Flujo Económico', 'Uso Recursos'], icons=['house','list-ol', 'cash-coin', 'tools'], orientation='horizontal')
-
-#-------------------------------------------COSTOS (SUBMENU FIN)------------------------------------------------------------------------------------------
-
-#-------------------------------------------COSTOS (INDICADORES INICIO)------------------------------------------------------------------------------------------
-#----DATAFRAME PARA CONSUMOS-----
-        #fecha_consumo= (filtered_recurso_consumo['mes'].unique())
-        #fecha_consumo_seleccionado= st.select_slider(label='Mes', options=list(mese_dict_consumo.keys()))
-        #filtered_fecha_consumo = filtered_recurso_consumo[filtered_recurso_consumo['mes'] == fecha_consumo_seleccionado] if fecha_consumo_seleccionado else filtered_recurso_consumo
-        
-
-        data_consumo=pd.DataFrame(filtered_recurso_consumo)
-        data_consumo['total'] = data_consumo['total'].astype(int)
-        data_consumo['precio'] = data_consumo['precio'].astype(int)
-        data_consumo['cantidad'] = data_consumo['cantidad'].astype(int)
-#-------------------------------------------------------------------------------------------------------------------------------------
-        
-        suma_data_consumo = data_consumo.groupby('fecha')['total'].sum().reset_index()
-        suma_tipocosto_consumo = data_consumo.groupby('tipoCosto')['total'].sum().reset_index()
-        suma_area_consumo = data_consumo.groupby('codigoArea')['total'].sum().reset_index()
-        suma_partida_consumo = data_consumo.groupby('nombrePartida')['total'].sum().reset_index()
-        suma_data_consumo_mes = data_consumo.groupby('mes')['total'].sum().reset_index()
-        suma_obra_consumo= data_consumo.groupby('obra')['total'].sum().reset_index()  
-             
-        suma_data_consumo['fecha'] = pd.to_datetime(suma_data_consumo['fecha'], dayfirst=True).dt.date
-
-        hoy = datetime.now().date()
-        ayer = hoy - timedelta(days=1)
-        antes_ayer = hoy - timedelta(days=2)
-        hoy_menos3 = hoy - timedelta(days=3)
-        
-        df_hoy = suma_data_consumo[suma_data_consumo['fecha'] == hoy]
-        df_ayer = suma_data_consumo[suma_data_consumo['fecha'] == ayer]
-        df_antes_ayer = suma_data_consumo[suma_data_consumo['fecha'] == antes_ayer]
-        df_hoy_menos3 = suma_data_consumo[suma_data_consumo['fecha'] == hoy_menos3]
-        
-        suma_total_hoy = df_hoy['total'].sum() if not df_hoy.empty else 0
-        suma_total_ayer = df_ayer['total'].sum() if not df_ayer.empty else 0
-        suma_total_antes_ayer = df_antes_ayer['total'].sum() if not df_antes_ayer.empty else 0
-        suma_total_hoy_menos3 = df_hoy_menos3['total'].sum() if not df_hoy_menos3.empty else 0
-        suma_total_consumo_general= suma_data_consumo_mes['total'].sum()
-
-        st.markdown("""
-        <style>
-        div[data-testid="metric-container"] {
-            text-align: center;
-        }
-        div[data-testid="stMetricValue"] {
-            font-size: 20px;
-            justify-content: center;
-        }
-        </style>
-        """, unsafe_allow_html=True)
-
-        if suma_total_ayer > 0:
-            variacion_porcentual_hoy = ((suma_total_hoy - suma_total_ayer) / suma_total_ayer) * 100
-        else:
-            variacion_porcentual_hoy = 0  
-
-        if suma_total_antes_ayer > 0:
-            variacion_porcentual_ayer = ((suma_total_ayer - suma_total_antes_ayer) / suma_total_antes_ayer) * 100
-        else:
-            variacion_porcentual_ayer = 0  
-
-        if suma_total_hoy_menos3 > 0:
-            variacion_porcentual_antes_ayer = ((suma_total_antes_ayer - suma_total_hoy_menos3) / suma_total_hoy_menos3) * 100
-        else:
-            variacion_porcentual_antes_ayer = 0 
-
-        with st.container(border=False):
-        
-            col1, col2, col3, col4, col5 = st.columns([0.7, 1, 1, 1, 1])
-            with col1:
-                st.metric(label='Total 3 días', value=f"{suma_total_hoy_menos3:,}")
-
-            with col2:
-                st.metric(label='Total Costo antes ayer', value=f"{suma_total_antes_ayer:,}", delta=f"{variacion_porcentual_antes_ayer:.2f}%")
-
             with col3:
-                st.metric(label='Total Costo ayer', value=f"{suma_total_ayer:,}", delta=f"{variacion_porcentual_ayer:.2f}%")
-
+                t_costo=(filtered_data_consumos['tipoCosto'].unique())
+                t_costo_seleccionado=st.selectbox(label='Tipo Costo', options=[''] + list(t_costo), placeholder='Tipo de Costos', label_visibility='visible' )
+                filtered_t_costo = filtered_data_consumos[filtered_data_consumos['tipoCosto'] == t_costo_seleccionado] if t_costo_seleccionado else filtered_data_consumos
             with col4:
-                st.metric(label='Total Costo hoy', value=f"{suma_total_hoy:,}", delta=f"{variacion_porcentual_hoy:.2f}%")
-
+                area_consumo= (filtered_t_costo['codigoArea'].unique())
+                area_consumo_seleccionada=st.selectbox(label='Área', options=[''] + list(area_consumo), placeholder='Nombre Área', label_visibility='visible')
+                filtered_area_consumo = filtered_t_costo[filtered_t_costo['codigoArea'] == area_consumo_seleccionada] if area_consumo_seleccionada else filtered_t_costo
             with col5:
+                partida_consumo= (filtered_area_consumo['nombrePartida'].unique())
+                partida_consumo_seleccionada=st.selectbox(label='Partida', options=[''] + list(partida_consumo), placeholder='Nombre Partida', label_visibility='visible')
+                filtered_partida_consumo = filtered_area_consumo[filtered_area_consumo['nombrePartida'] == partida_consumo_seleccionada] if partida_consumo_seleccionada else filtered_area_consumo
+            with col6:
+                recurso_consumo= (filtered_partida_consumo['nombreRecurso'].unique())
+                recurso_consumo_seleccionada=st.selectbox(label='Recurso', options=[''] + list(recurso_consumo), placeholder='Nombre Recurso', label_visibility='visible')
+                filtered_recurso_consumo = filtered_partida_consumo[filtered_partida_consumo['nombreRecurso'] == recurso_consumo_seleccionada] if recurso_consumo_seleccionada else filtered_partida_consumo
+                
+    #-------------------------------------------COSTOS (FILTROS FIN)------------------------------------------------------------------------------------------
+    #-------------------------------------------COSTOS (SUBMENU INICIO)------------------------------------------------------------------------------------------
+
+            mes_inicio,mes_fin=st.select_slider(label='Rango Fecha Consumos', options=['1','2','3','4','5','6','7','8','9','10','11','12'], value=['1','12'], label_visibility='hidden' )
+            selected = option_menu(menu_title=None, options=['','Resumen', 'Flujo Económico', 'Uso Recursos'], icons=['house','list-ol', 'cash-coin', 'tools'], orientation='horizontal')
+
+    #-------------------------------------------COSTOS (SUBMENU FIN)------------------------------------------------------------------------------------------
+
+    #-------------------------------------------COSTOS (INDICADORES INICIO)------------------------------------------------------------------------------------------
+    #----DATAFRAME PARA CONSUMOS-----
+            #fecha_consumo= (filtered_recurso_consumo['mes'].unique())
+            #fecha_consumo_seleccionado= st.select_slider(label='Mes', options=list(mese_dict_consumo.keys()))
+            #filtered_fecha_consumo = filtered_recurso_consumo[filtered_recurso_consumo['mes'] == fecha_consumo_seleccionado] if fecha_consumo_seleccionado else filtered_recurso_consumo
             
-                tabla_flujo_total = data_consumo[['codigoArea', 'nombrePartida', 'total', 'fecha', 'mes', 'obra']]
-                tabla_flujo_total = tabla_flujo_total.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida', 'total': 'Total', 'fecha':'Fecha', 'mes':'Mes'})            
-                df_flujo_total= pd.DataFrame(tabla_flujo_total)
-                df_flujo_total['Total']=pd.to_numeric(df_flujo_total['Total'])
-                df_flujo_total['Fecha'] = pd.to_datetime(df_flujo_total['Fecha'], dayfirst=True).dt.date            
-                df_flujo_total['Mes']=pd.to_numeric(df_flujo_total['Mes'])
+
+            data_consumo=pd.DataFrame(filtered_recurso_consumo)
+            data_consumo['total'] = data_consumo['total'].astype(int)
+            data_consumo['precio'] = data_consumo['precio'].astype(int)
+            data_consumo['cantidad'] = data_consumo['cantidad'].astype(int)
+    #-------------------------------------------------------------------------------------------------------------------------------------
+            
+            suma_data_consumo = data_consumo.groupby('fecha')['total'].sum().reset_index()
+            suma_tipocosto_consumo = data_consumo.groupby('tipoCosto')['total'].sum().reset_index()
+            suma_area_consumo = data_consumo.groupby('codigoArea')['total'].sum().reset_index()
+            suma_partida_consumo = data_consumo.groupby('nombrePartida')['total'].sum().reset_index()
+            suma_data_consumo_mes = data_consumo.groupby('mes')['total'].sum().reset_index()
+            suma_obra_consumo= data_consumo.groupby('obra')['total'].sum().reset_index()  
+                
+            suma_data_consumo['fecha'] = pd.to_datetime(suma_data_consumo['fecha'], dayfirst=True).dt.date
+
+            hoy = datetime.now().date()
+            ayer = hoy - timedelta(days=1)
+            antes_ayer = hoy - timedelta(days=2)
+            hoy_menos3 = hoy - timedelta(days=3)
+            
+            df_hoy = suma_data_consumo[suma_data_consumo['fecha'] == hoy]
+            df_ayer = suma_data_consumo[suma_data_consumo['fecha'] == ayer]
+            df_antes_ayer = suma_data_consumo[suma_data_consumo['fecha'] == antes_ayer]
+            df_hoy_menos3 = suma_data_consumo[suma_data_consumo['fecha'] == hoy_menos3]
+            
+            suma_total_hoy = df_hoy['total'].sum() if not df_hoy.empty else 0
+            suma_total_ayer = df_ayer['total'].sum() if not df_ayer.empty else 0
+            suma_total_antes_ayer = df_antes_ayer['total'].sum() if not df_antes_ayer.empty else 0
+            suma_total_hoy_menos3 = df_hoy_menos3['total'].sum() if not df_hoy_menos3.empty else 0
+            suma_total_consumo_general= suma_data_consumo_mes['total'].sum()
+
+            st.markdown("""
+            <style>
+            div[data-testid="metric-container"] {
+                text-align: center;
+            }
+            div[data-testid="stMetricValue"] {
+                font-size: 20px;
+                justify-content: center;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+
+            if suma_total_ayer > 0:
+                variacion_porcentual_hoy = ((suma_total_hoy - suma_total_ayer) / suma_total_ayer) * 100
+            else:
+                variacion_porcentual_hoy = 0  
+
+            if suma_total_antes_ayer > 0:
+                variacion_porcentual_ayer = ((suma_total_ayer - suma_total_antes_ayer) / suma_total_antes_ayer) * 100
+            else:
+                variacion_porcentual_ayer = 0  
+
+            if suma_total_hoy_menos3 > 0:
+                variacion_porcentual_antes_ayer = ((suma_total_antes_ayer - suma_total_hoy_menos3) / suma_total_hoy_menos3) * 100
+            else:
+                variacion_porcentual_antes_ayer = 0 
+
+            with st.container(border=False):
+            
+                col1, col2, col3, col4, col5 = st.columns([0.7, 1, 1, 1, 1])
+                with col1:
+                    st.metric(label='Total 3 días', value=f"{suma_total_hoy_menos3:,}")
+
+                with col2:
+                    st.metric(label='Total Costo antes ayer', value=f"{suma_total_antes_ayer:,}", delta=f"{variacion_porcentual_antes_ayer:.2f}%")
+
+                with col3:
+                    st.metric(label='Total Costo ayer', value=f"{suma_total_ayer:,}", delta=f"{variacion_porcentual_ayer:.2f}%")
+
+                with col4:
+                    st.metric(label='Total Costo hoy', value=f"{suma_total_hoy:,}", delta=f"{variacion_porcentual_hoy:.2f}%")
+
+                with col5:
+                
+                    tabla_flujo_total = data_consumo[['codigoArea', 'nombrePartida', 'total', 'fecha', 'mes', 'obra']]
+                    tabla_flujo_total = tabla_flujo_total.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida', 'total': 'Total', 'fecha':'Fecha', 'mes':'Mes'})            
+                    df_flujo_total= pd.DataFrame(tabla_flujo_total)
+                    df_flujo_total['Total']=pd.to_numeric(df_flujo_total['Total'])
+                    df_flujo_total['Fecha'] = pd.to_datetime(df_flujo_total['Fecha'], dayfirst=True).dt.date            
+                    df_flujo_total['Mes']=pd.to_numeric(df_flujo_total['Mes'])
+                    mes_inicio= pd.to_numeric(mes_inicio)
+                    mes_fin= pd.to_numeric(mes_fin)
+
+                    df_filtrado_total = df_flujo_total[(df_flujo_total['Mes'] >= mes_inicio) & (df_flujo_total['Mes'] <= mes_fin)]
+                    formato_para_total= df_filtrado_total['Total'].sum()
+        
+                    st.metric(label= 'Total Costo', value=f"{formato_para_total:,}")
+                
+
+                
+
+    #-------------------------------------------COSTOS (INDICADORES FIN)------------------------------------------------------------------------------------------
+
+    #-------------------------------------------COSTOS (GRAFICOS)------------------------------------------------------------------------------------------
+
+    #----GRAFICO CONSUMOS---
+
+    #-------------------------------------------COSTOS (RESUMEN INICIO)------------------------------------------------------------------------------------------
+
+            if selected == '':
+                
+                tabla_total = data_consumo[['codigoArea', 'total', 'fecha', 'mes']]
+                tabla_total = tabla_total.rename(columns={'codigoArea': 'Área', 'total': 'Total', 'fecha':'Fecha', 'mes':'Mes'})
+                
+                df_tabla_total= pd.DataFrame(tabla_total)
+                df_tabla_total['Total']=pd.to_numeric(df_tabla_total['Total'])
+                df_tabla_total['Fecha'] = pd.to_datetime(df_tabla_total['Fecha'], dayfirst=True).dt.date
+                df_tabla_total['Mes']=pd.to_numeric(df_tabla_total['Mes'])
                 mes_inicio= pd.to_numeric(mes_inicio)
                 mes_fin= pd.to_numeric(mes_fin)
 
-                df_filtrado_total = df_flujo_total[(df_flujo_total['Mes'] >= mes_inicio) & (df_flujo_total['Mes'] <= mes_fin)]
-                formato_para_total= df_filtrado_total['Total'].sum()
-    
-                st.metric(label= 'Total Costo', value=f"{formato_para_total:,}")
-            
 
-            
+                df_filtrado = df_tabla_total[(df_tabla_total['Mes'] >= mes_inicio) & (df_tabla_total['Mes'] <= mes_fin)]
 
-#-------------------------------------------COSTOS (INDICADORES FIN)------------------------------------------------------------------------------------------
-
-#-------------------------------------------COSTOS (GRAFICOS)------------------------------------------------------------------------------------------
-
-#----GRAFICO CONSUMOS---
-
-#-------------------------------------------COSTOS (RESUMEN INICIO)------------------------------------------------------------------------------------------
-
-        if selected == '':
-            
-            tabla_total = data_consumo[['codigoArea', 'total', 'fecha', 'mes']]
-            tabla_total = tabla_total.rename(columns={'codigoArea': 'Área', 'total': 'Total', 'fecha':'Fecha', 'mes':'Mes'})
-            
-            df_tabla_total= pd.DataFrame(tabla_total)
-            df_tabla_total['Total']=pd.to_numeric(df_tabla_total['Total'])
-            df_tabla_total['Fecha'] = pd.to_datetime(df_tabla_total['Fecha'], dayfirst=True).dt.date
-            df_tabla_total['Mes']=pd.to_numeric(df_tabla_total['Mes'])
-            mes_inicio= pd.to_numeric(mes_inicio)
-            mes_fin= pd.to_numeric(mes_fin)
-
-
-            df_filtrado = df_tabla_total[(df_tabla_total['Mes'] >= mes_inicio) & (df_tabla_total['Mes'] <= mes_fin)]
-
-            pivot_df_total = df_filtrado.pivot_table(index='Área', columns='Fecha', values='Total', aggfunc='sum', margins=True, margins_name='Total').fillna(0).astype(int)
-            suma_data_consumo_mes['mes_numerico'] = range(1, len(suma_data_consumo_mes) + 1)
-            fig = px.line(suma_data_consumo_mes, x='mes_numerico', y='total', title='Total Costo por Mes')
-            fig.update_xaxes(title='Meses', tickvals=suma_data_consumo_mes['mes_numerico'], ticktext=suma_data_consumo_mes['mes'])
-            fig.update_layout(
-                    height=250,  # Ajustar la altura de la gráfica
-                    margin=dict(l=0, r=0, t=25, b=0),  # Ajustar los márgenes
-                    xaxis_title='',  # Quitar el título del eje x
-                    yaxis_title='',  # Quitar el título del eje y
-                    showlegend=True,  # Mostrar la leyenda
-                    yaxis=dict(showgrid=False)
-                )
-            st.plotly_chart(fig, use_container_width=True)
-
-            col1,col2,col3 = st.columns([1,1,1])
-            with col1:
-                    fig1 = px.pie(suma_obra_consumo, values='total', names='obra', title='Distribución por Obra')
-                    fig1.update_layout(
-                    showlegend=False,  # Quitar la leyenda
-                    margin=dict(l=40, r=40, t=40, b=40)
+                pivot_df_total = df_filtrado.pivot_table(index='Área', columns='Fecha', values='Total', aggfunc='sum', margins=True, margins_name='Total').fillna(0).astype(int)
+                suma_data_consumo_mes['mes_numerico'] = range(1, len(suma_data_consumo_mes) + 1)
+                fig = px.line(suma_data_consumo_mes, x='mes_numerico', y='total', title='Total Costo por Mes')
+                fig.update_xaxes(title='Meses', tickvals=suma_data_consumo_mes['mes_numerico'], ticktext=suma_data_consumo_mes['mes'])
+                fig.update_layout(
+                        height=250,  # Ajustar la altura de la gráfica
+                        margin=dict(l=0, r=0, t=25, b=0),  # Ajustar los márgenes
+                        xaxis_title='',  # Quitar el título del eje x
+                        yaxis_title='',  # Quitar el título del eje y
+                        showlegend=True,  # Mostrar la leyenda
+                        yaxis=dict(showgrid=False)
                     )
-                    st.plotly_chart(fig1, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True)
+
+                col1,col2,col3 = st.columns([1,1,1])
+                with col1:
+                        fig1 = px.pie(suma_obra_consumo, values='total', names='obra', title='Distribución por Obra')
+                        fig1.update_layout(
+                        showlegend=False,  # Quitar la leyenda
+                        margin=dict(l=40, r=40, t=40, b=40)
+                        )
+                        st.plotly_chart(fig1, use_container_width=True)
+                        
+                with col2:
+                        suma_area_consumo_sorted = suma_area_consumo.sort_values(by='total', ascending=False)
+                        top_5_suma_area_consumo = suma_area_consumo_sorted.head(5)
+                        fig2 = px.bar(top_5_suma_area_consumo, x='codigoArea', y='total', title='Distribución por Área')
+                        fig2.update_layout(
+                            showlegend=False,  # Quitar la leyenda si es necesario
+                            margin=dict(l=0, r=0, t=40, b=0)
+                        )
+                        fig2.update_xaxes(title_text='', showgrid=False)  # Quitar el título del eje x
+                        fig2.update_yaxes(title_text='', showgrid=False)  # Quitar el título del eje y
+                        st.plotly_chart(fig2, use_container_width=True)
+                        
+                with col3:
+                        suma_partida_consumo_sorted = suma_partida_consumo.sort_values(by='total', ascending=False)
+                        top_5_suma_partida_consumo = suma_partida_consumo_sorted.head(5)
+                        fig3 = px.bar(top_5_suma_partida_consumo, x='nombrePartida', y='total', title='Distribución por Partida')
+                        fig3.update_layout(
+                            showlegend=False,  # Quitar la leyenda si es necesario
+                            margin=dict(l=0, r=0, t=40, b=0)
+                        )
+                        fig3.update_xaxes(title_text='', showgrid=False)  # Quitar el título del eje x
+                        fig3.update_yaxes(title_text='', showgrid=False)  # Quitar el título del eje y
+                        st.plotly_chart(fig3, use_container_width=True)
+
+                st.dataframe(pivot_df_total, width=1100)
+            if selected == 'Resumen':
+
+                tabla_resumen = data_consumo[['codigoArea', 'nombrePartida', 'nombreRecurso','unidad', 'cantidad', 'precio', 'total', 'mes']]
+                tabla_resumen = tabla_resumen.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida', 'nombreRecurso': 'Recurso', 'unidad':'Unidad', 'cantidad': 'Cantidad', 'precio': 'Precio', 'total': 'Total'})
+                tabla_resumen['Total']=pd.to_numeric(tabla_resumen['Total'])
+                tabla_resumen['Precio']=pd.to_numeric(tabla_resumen['Precio'])
+                mes_inicio= pd.to_numeric(mes_inicio)
+                mes_fin= pd.to_numeric(mes_fin)
+                df_filtrado = tabla_resumen[(tabla_resumen['mes'] >= mes_inicio) & (tabla_resumen['mes'] <= mes_fin)]
+
+                with st.container(border=False, height=600):
+                    st.dataframe(df_filtrado, width=1100)
+
+            if selected == 'Flujo Económico':
+
+                tabla_flujo_economico = data_consumo[['codigoArea', 'nombrePartida', 'total', 'fecha', 'mes']]
+                tabla_flujo_economico = tabla_flujo_economico.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida', 'total': 'Total', 'fecha':'Fecha', 'mes':'Mes'})            
+            
+                df_flujo_economico= pd.DataFrame(tabla_flujo_economico)
+                df_flujo_economico['Total']=pd.to_numeric(df_flujo_economico['Total'])
+                df_flujo_economico['Fecha'] = pd.to_datetime(df_flujo_economico['Fecha'], dayfirst=True).dt.date            
+                df_flujo_economico['Mes']=pd.to_numeric(df_flujo_economico['Mes'])
+                mes_inicio= pd.to_numeric(mes_inicio)
+                mes_fin= pd.to_numeric(mes_fin)
+
+                df_filtrado_fe = df_flujo_economico[(df_flujo_economico['Mes'] >= mes_inicio) & (df_flujo_economico['Mes'] <= mes_fin)]
+                # Crear la pivot table
+                pivot_df_fe = df_filtrado_fe.pivot_table(index=['Área', 'Partida'], columns='Fecha', values='Total', aggfunc='sum', margins=True, margins_name='Total').fillna(0).astype(int)
+
+                formatted_pivot_df_fe = pivot_df_fe.applymap(lambda x: f'{x:,}')
+
+                    # Mostrar la pivot table
                     
-            with col2:
-                    suma_area_consumo_sorted = suma_area_consumo.sort_values(by='total', ascending=False)
-                    top_5_suma_area_consumo = suma_area_consumo_sorted.head(5)
-                    fig2 = px.bar(top_5_suma_area_consumo, x='codigoArea', y='total', title='Distribución por Área')
-                    fig2.update_layout(
-                        showlegend=False,  # Quitar la leyenda si es necesario
-                        margin=dict(l=0, r=0, t=40, b=0)
-                    )
-                    fig2.update_xaxes(title_text='', showgrid=False)  # Quitar el título del eje x
-                    fig2.update_yaxes(title_text='', showgrid=False)  # Quitar el título del eje y
-                    st.plotly_chart(fig2, use_container_width=True)
-                    
-            with col3:
-                    suma_partida_consumo_sorted = suma_partida_consumo.sort_values(by='total', ascending=False)
-                    top_5_suma_partida_consumo = suma_partida_consumo_sorted.head(5)
-                    fig3 = px.bar(top_5_suma_partida_consumo, x='nombrePartida', y='total', title='Distribución por Partida')
-                    fig3.update_layout(
-                        showlegend=False,  # Quitar la leyenda si es necesario
-                        margin=dict(l=0, r=0, t=40, b=0)
-                    )
-                    fig3.update_xaxes(title_text='', showgrid=False)  # Quitar el título del eje x
-                    fig3.update_yaxes(title_text='', showgrid=False)  # Quitar el título del eje y
-                    st.plotly_chart(fig3, use_container_width=True)
-
-            st.dataframe(pivot_df_total, width=1100)
-        if selected == 'Resumen':
-
-            tabla_resumen = data_consumo[['codigoArea', 'nombrePartida', 'nombreRecurso','unidad', 'cantidad', 'precio', 'total', 'mes']]
-            tabla_resumen = tabla_resumen.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida', 'nombreRecurso': 'Recurso', 'unidad':'Unidad', 'cantidad': 'Cantidad', 'precio': 'Precio', 'total': 'Total'})
-            tabla_resumen['Total']=pd.to_numeric(tabla_resumen['Total'])
-            tabla_resumen['Precio']=pd.to_numeric(tabla_resumen['Precio'])
-            mes_inicio= pd.to_numeric(mes_inicio)
-            mes_fin= pd.to_numeric(mes_fin)
-            df_filtrado = tabla_resumen[(tabla_resumen['mes'] >= mes_inicio) & (tabla_resumen['mes'] <= mes_fin)]
-
-            with st.container(border=False, height=600):
-                st.dataframe(df_filtrado, width=1100)
-
-        if selected == 'Flujo Económico':
-
-            tabla_flujo_economico = data_consumo[['codigoArea', 'nombrePartida', 'total', 'fecha', 'mes']]
-            tabla_flujo_economico = tabla_flujo_economico.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida', 'total': 'Total', 'fecha':'Fecha', 'mes':'Mes'})            
-           
-            df_flujo_economico= pd.DataFrame(tabla_flujo_economico)
-            df_flujo_economico['Total']=pd.to_numeric(df_flujo_economico['Total'])
-            df_flujo_economico['Fecha'] = pd.to_datetime(df_flujo_economico['Fecha'], dayfirst=True).dt.date            
-            df_flujo_economico['Mes']=pd.to_numeric(df_flujo_economico['Mes'])
-            mes_inicio= pd.to_numeric(mes_inicio)
-            mes_fin= pd.to_numeric(mes_fin)
-
-            df_filtrado_fe = df_flujo_economico[(df_flujo_economico['Mes'] >= mes_inicio) & (df_flujo_economico['Mes'] <= mes_fin)]
-               # Crear la pivot table
-            pivot_df_fe = df_filtrado_fe.pivot_table(index=['Área', 'Partida'], columns='Fecha', values='Total', aggfunc='sum', margins=True, margins_name='Total').fillna(0).astype(int)
-
-            formatted_pivot_df_fe = pivot_df_fe.applymap(lambda x: f'{x:,}')
-
-                # Mostrar la pivot table
+                st.dataframe(formatted_pivot_df_fe, width=1100)            
                 
-            st.dataframe(formatted_pivot_df_fe, width=1100)            
+
+            if selected == 'Uso Recursos':
+
+                tabla_uso_recurso = data_consumo[['codigoArea', 'nombrePartida', 'nombreRecurso', 'unidad', 'cantidad','fecha', 'mes']]
+                tabla_uso_recurso = tabla_uso_recurso.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida','nombreRecurso': 'Recurso', 'unidad':'Unidad', 'cantidad': 'Cantidad', 'fecha':'Fecha', 'mes':'Mes'})                
             
+                df_uso_recurso= pd.DataFrame(tabla_uso_recurso)
+                df_uso_recurso['Cantidad']=pd.to_numeric(df_uso_recurso['Cantidad'])
+                df_uso_recurso['Fecha'] = pd.to_datetime(df_uso_recurso['Fecha'], dayfirst=True).dt.date
+                df_uso_recurso['Mes']=pd.to_numeric(df_uso_recurso['Mes'])
+                mes_inicio= pd.to_numeric(mes_inicio)
+                mes_fin= pd.to_numeric(mes_fin)
 
-        if selected == 'Uso Recursos':
+                df_filtrado_uso = df_uso_recurso[(df_uso_recurso['Mes'] >= mes_inicio) & (df_uso_recurso['Mes'] <= mes_fin)]
+                # Crear la pivot table
+                pivot_df = df_filtrado_uso.pivot_table(index=['Área', 'Partida', 'Recurso', 'Unidad'], columns='Fecha', values='Cantidad', aggfunc='sum', margins=True, margins_name='Total').fillna(0).astype(int)
 
-            tabla_uso_recurso = data_consumo[['codigoArea', 'nombrePartida', 'nombreRecurso', 'unidad', 'cantidad','fecha', 'mes']]
-            tabla_uso_recurso = tabla_uso_recurso.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida','nombreRecurso': 'Recurso', 'unidad':'Unidad', 'cantidad': 'Cantidad', 'fecha':'Fecha', 'mes':'Mes'})                
-           
-            df_uso_recurso= pd.DataFrame(tabla_uso_recurso)
-            df_uso_recurso['Cantidad']=pd.to_numeric(df_uso_recurso['Cantidad'])
-            df_uso_recurso['Fecha'] = pd.to_datetime(df_uso_recurso['Fecha'], dayfirst=True).dt.date
-            df_uso_recurso['Mes']=pd.to_numeric(df_uso_recurso['Mes'])
-            mes_inicio= pd.to_numeric(mes_inicio)
-            mes_fin= pd.to_numeric(mes_fin)
+                formatted_pivot_df = pivot_df.applymap(lambda x: f'{x:,}')
 
-            df_filtrado_uso = df_uso_recurso[(df_uso_recurso['Mes'] >= mes_inicio) & (df_uso_recurso['Mes'] <= mes_fin)]
-               # Crear la pivot table
-            pivot_df = df_filtrado_uso.pivot_table(index=['Área', 'Partida', 'Recurso', 'Unidad'], columns='Fecha', values='Cantidad', aggfunc='sum', margins=True, margins_name='Total').fillna(0).astype(int)
-
-            formatted_pivot_df = pivot_df.applymap(lambda x: f'{x:,}')
-
-                # Mostrar la pivot table
-                
-            st.dataframe(formatted_pivot_df, width=1100)
+                    # Mostrar la pivot table
+                    
+                st.dataframe(formatted_pivot_df, width=1100)
 
         else:
-            st.write('No existe costo con los filtros seleccionados')
+                st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
+                st.warning(f'No existe costo en la obra {par4}')
 
 #-------------------------------------------COSTOS FIN------------------------------------------------------------------------------------------
 
