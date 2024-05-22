@@ -747,24 +747,26 @@ def main_interface():
 #-------------------------------------------COSTOS FIN------------------------------------------------------------------------------------------
 
 
-    if selected == 'kardex':
-        st.warning('Kardex aún no se encuentra disponible')
+    if selected == 'Kardex':
+        st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
+        st.warning('Módulo no disponible')
         
         #LLAMADA APIkardex.py
 
-        APIkardex = response(p1, p2,par3,kardex4,kardex5,kardex6)
-        data = APIbodega.json()['datos']
+        #APIkardex = response(p1, p2,par3,kardex4,kardex5,kardex6)
+        #data = APIbodega.json()['datos']
         # Columnas que voy a llamar de 'datos'
-        selected_columns = ['obra', 'recibe', 'nombreRecurso', 'undRecurso', 'cantidad', 'precio', 'subTotal', 'clase', 'nombreClase', 'fecha']
+        #selected_columns = ['obra', 'recibe', 'nombreRecurso', 'undRecurso', 'cantidad', 'precio', 'subTotal', 'clase', 'nombreClase', 'fecha']
         # Armar un nuevo DF para mostrar las columnas seleccionadas
-        filtered_data = [{column: entry[column] for column in selected_columns} for entry in data]
+        #filtered_data = [{column: entry[column] for column in selected_columns} for entry in data]
 
 
 
 
 
     if selected == 'Maquinaria':
-            st.warning('Maquinaria aún no se encuentra disponible')
+        st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
+        st.warning('Módulo no disponible')
 
 
 
