@@ -748,6 +748,8 @@ def main_interface():
 
 
     if selected == 'kardex':
+        st.warning('Kardex aún no se encuentra disponible')
+        
         #LLAMADA APIkardex.py
 
         APIkardex = response(p1, p2,par3,kardex4,kardex5,kardex6)
@@ -762,7 +764,7 @@ def main_interface():
 
 
     if selected == 'Maquinaria':
-            st.table()
+            st.warning('Maquinaria aún no se encuentra disponible')
 
 
 
