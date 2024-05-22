@@ -1,7 +1,7 @@
 import pandas as pd
 import streamlit as st
 import numpy as np
-import streamlit_authenticator as stauth
+#import streamlit_authenticator as stauth
 import yaml
 import plotly.express as px
 from streamlit_option_menu import option_menu
