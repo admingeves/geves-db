@@ -88,6 +88,18 @@ def main_interface():
 #MENU DEL SIDEBAR
 
         selected = option_menu(menu_title=None, options=['EPP', 'Costos', 'Kardex', 'Maquinaria'], icons=['person-badge-fill', 'coin', 'receipt', 'truck-front'])
+        st.markdown(
+            """
+            <style>
+            .stSelectbox {
+                margin-top: -20px;
+                margin-bottom: -20px;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+
         p1 = st.selectbox(label='Cliente', options=['INCOPROV'], label_visibility='hidden', placeholder='Cliente')
         p2 = st.selectbox(label='Empresa', options=['INCOPROV', 'HGM'], label_visibility='hidden', placeholder='Empresa')
         
@@ -122,6 +134,25 @@ def main_interface():
     #FILTRO DATOS API CLASE, OBRA, RECURSO y RECIBE
         filtered_clases_epp= filtered_df[filtered_df['clase'].str.startswith('0404')]
         filtered_data_clases = pd.DataFrame(filtered_clases_epp)
+        st.markdown(
+            """
+            <style>
+            .stSlider {
+                margin-top: -30px;
+                margin-bottom: -10px;
+            }
+            .stSelectbox {
+                margin-top: -10px;
+                margin-bottom: -10px;
+            }
+            .block-container {
+                padding-top: 20px;
+                padding-bottom: 0px;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
     
         col1, col2, col3, col4 = st.columns([1, 1, 2, 2])
         with col1:
@@ -433,6 +464,25 @@ def main_interface():
  #-------------------------------------------COSTOS (FILTROS INICIO)------------------------------------------------------------------------------------------
        
 #FILTROS APIconsumos
+        st.markdown(
+            """
+            <style>
+            .stSlider {
+                margin-top: -40px;
+                margin-bottom: -10px;
+            }
+            .stSelectbox {
+                margin-top: -10px;
+                margin-bottom: -10px;
+            }
+            .block-container {
+                padding-top: 20px;
+                padding-bottom: 0px;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
 
         with col3:
             t_costo=(filtered_data_consumos['tipoCosto'].unique())
@@ -453,6 +503,7 @@ def main_interface():
             
 #-------------------------------------------COSTOS (FILTROS FIN)------------------------------------------------------------------------------------------
 #-------------------------------------------COSTOS (SUBMENU INICIO)------------------------------------------------------------------------------------------
+
         mes_inicio,mes_fin=st.select_slider(label='Rango Fecha Consumos', options=['1','2','3','4','5','6','7','8','9','10','11','12'], value=['1','12'], label_visibility='hidden' )
         selected = option_menu(menu_title=None, options=['','Resumen', 'Flujo Económico', 'Uso Recursos'], icons=['house','list-ol', 'cash-coin', 'tools'], orientation='horizontal')
 
@@ -508,6 +559,10 @@ def main_interface():
         </style>
         """, unsafe_allow_html=True)
 
+        variacion_porcentual_hoy = ((suma_total_hoy - suma_total_ayer) / suma_total_ayer) * 100
+        variacion_porcentual_ayer = ((suma_total_ayer - suma_total_antes_ayer) / suma_total_antes_ayer) * 100
+        variacion_porcentual_antes_ayer = ((suma_total_antes_ayer - suma_total_hoy_menos3) / suma_total_hoy_menos3) * 100
+
         with st.container(border=False):
         
             col1, col2, col3, col4, col5 = st.columns([0.7, 1, 1, 1, 1])
@@ -515,13 +570,13 @@ def main_interface():
                 st.metric(label='Total 3 días', value=f"{suma_total_hoy_menos3:,}")
 
             with col2:
-                st.metric(label='Total Costo antes ayer', value=f"{suma_total_antes_ayer:,}")
+                st.metric(label='Total Costo antes ayer', value=f"{suma_total_antes_ayer:,}", delta=f"{variacion_porcentual_antes_ayer:.2f}%")
 
             with col3:
-                st.metric(label='Total Costo ayer', value=f"{suma_total_ayer:,}")
+                st.metric(label='Total Costo ayer', value=f"{suma_total_ayer:,}", delta=f"{variacion_porcentual_ayer:.2f}%")
 
             with col4:
-                st.metric(label='Total Costo hoy', value=f"{suma_total_hoy:,}")
+                st.metric(label='Total Costo hoy', value=f"{suma_total_hoy:,}", delta=f"{variacion_porcentual_hoy:.2f}%")
 
             with col5:
             
