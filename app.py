@@ -6,7 +6,7 @@ from streamlit_option_menu import option_menu
 from APIbodega import response
 from APIconsumos import response_consumo
 from APIobras import response_obras
-from APIkardex import response_kardex
+#from APIkardex import response_kardex
 from datetime import datetime, timedelta
 
 
@@ -764,105 +764,7 @@ def main_interface():
     if selected == 'Kardex':
         st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
         st.warning('Módulo no disponible')
-        APIobras = response_obras(p1, p2)
-        if APIobras is None:
-            st.error("Error: No se pudo obtener los datos de obras.")
-        else:
-            datos_obra = APIobras.json().get('datos', [])
-            columns_obra = ['codObra']
-            if datos_obra is not None:
-                filtered = [{column: entry[column] for column in columns_obra} for entry in datos_obra]
-            else:
-                filtered = []
-            
-        filtered_data_obra = pd.DataFrame(filtered)
-        filtro_obra = filtered_data_obra['codObra'].unique()
-
-        par3=st.selectbox(label='Obra', options=[''] + list(filtro_obra), label_visibility='visible', placeholder='Obra')
-        kardex4=''
-        kardex5='01/01/2023'
-        kardex6='31/12/2024'
-
-
-        APIkardex = response_kardex(p1,p2,par3,kardex4,kardex5,kardex6)
-        datos = APIkardex.json()['datos']
-        selected_columns = [ 'obra', 'bodega', 'tipoMovimiento', 'nroMovmiento', 'proveedor', 'digita', 'codRecurso', 'recurso', 'unidad', 'fechaMov', 'entra', 'sale', 'precio', 'total', 'codClase', 'clase', 'tipoCosto', 'codigoArea', 'area', 'codPartida', 'partida', 'nombreRecibe', 'nombreObra', 'nroEquipo', 'nroOT']
-        filtered_kardex = [{column: entry[column] for column in selected_columns} for entry in datos]
-    
-        kardex=pd.DataFrame(filtered_kardex)
-        kardex['fechaMov']=pd.to_datetime(kardex['fechaMov'], dayfirst=True).dt.date
-        kardex = kardex.sort_values(by=['recurso', 'fechaMov'])
-        kardex['entra'] = kardex['entra'].str.replace('.', '', regex=False).str.replace(',', '.', regex=False)
-        kardex['entra']=pd.to_numeric(kardex['entra'])
-        kardex['sale'] = kardex['sale'].str.replace('.', '', regex=False).str.replace(',', '.', regex=False)
-        kardex['sale']=pd.to_numeric(kardex['sale'])
         
-        suma_entra_por_recurso = kardex.groupby('recurso')['entra'].sum().reset_index()
-        suma_sale_por_recurso = kardex.groupby('recurso')['sale'].sum().reset_index()
-        #suma_entra_por_recurso.rename(columns={'entra': 'suma_entra'}, inplace=True)
-        st.dataframe(suma_entra_por_recurso)
-        st.dataframe(suma_sale_por_recurso)
-        suma_total_por_recurso = pd.merge(suma_entra_por_recurso, suma_sale_por_recurso, on='recurso')
-        suma_total_por_recurso['stock'] = suma_total_por_recurso['entra'] - suma_total_por_recurso['sale']
-        #st.dataframe(suma_total_por_recurso)
-        #st.dataframe(kardex)
-
-        inventario_actual = suma_total_por_recurso['stock'].iloc[-1]
-        total_consumo = kardex['sale'].sum()
-        dias = (pd.to_datetime(kardex['fechaMov'].max()) - pd.to_datetime(kardex['fechaMov'].min())).days + 1
-        consumo_diario_promedio = total_consumo / dias
-        dias_cobertura = inventario_actual / consumo_diario_promedio
-
-        st.write(dias_cobertura)
-
-        kardex['stock'] = kardex['entra'].cumsum() - kardex['sale'].cumsum()
-
-
-        resultados = []
-
-        for recurso, grupo in kardex.groupby('recurso'):
-            inventario_actual = grupo['entra'].sum() - grupo['sale'].sum()
-            total_consumo = grupo['sale'].sum()
-            dias = (pd.to_datetime(grupo['fechaMov'].max()) - pd.to_datetime(grupo['fechaMov'].min())).days + 1
-            consumo_diario_promedio = total_consumo / dias if dias > 0 else 0
-            dias_cobertura = inventario_actual / consumo_diario_promedio if consumo_diario_promedio > 0 else float('inf')
-            
-            resultados.append({
-                'recurso': recurso,
-                'inventario_actual': inventario_actual,
-                'total_consumo': total_consumo,
-                'consumo_diario_promedio': consumo_diario_promedio,
-                'dias_cobertura': dias_cobertura
-            })
-        resultados_df = pd.DataFrame(resultados)
-        resultados_df=resultados_df.sort_values(by=['dias_cobertura'])
-        st.dataframe(resultados_df)
-
-        grupo['precio'] = grupo['precio'].str.replace('.', '', regex=False).str.replace(',', '.', regex=False)
-        grupo['precio']= pd.to_numeric(grupo['precio'])
-        grupo['stock'] = pd.to_numeric(grupo['stock'], errors='coerce')
-        grupo['valor_inventario'] = grupo['stock'] * grupo['precio']
-        valor_total_inventario = grupo['valor_inventario'].sum()
-
-        st.write(valor_total_inventario)
-
-
-
-
-    if selected == 'Maquinaria':
-        st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
-        st.warning('Módulo no disponible')
-
-
-
-       
-
-
-
-
-
-
-
 # Inicializar el estado de la sesión
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
