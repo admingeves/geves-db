@@ -387,7 +387,7 @@ def main_interface():
             tabla_total = monto.rename(columns={'obra': 'Obra', 'recibe': 'Trabajador', 'nombreRecurso':'EPP', 'fecha':'Fecha', 'cantidad': 'Cantidad'})
             datos_bodega = tabla_total[['Trabajador', 'EPP', 'Cantidad','Fecha']]
             
-            datos_bodega['Fecha'] = pd.to_datetime(datos_bodega['Fecha']).dt.date
+            datos_bodega['Fecha'] = pd.to_datetime(datos_bodega['Fecha'], dayfirst=True).dt.date
             datos_bodega['Antigüedad EPP (días)'] = (datetime.now().date() - datos_bodega['Fecha']).apply(lambda x: x.days)
             datos_bodega = datos_bodega.sort_values(by='Antigüedad EPP (días)', ascending=False)
             
@@ -402,7 +402,7 @@ def main_interface():
             tabla_total = monto.rename(columns={'obra': 'Obra', 'recibe': 'Trabajador', 'nombreRecurso':'EPP', 'fecha':'Fecha', 'subTotal':'Total', 'cantidad': 'Cantidad', 'precio':'Precio', 'mes':'Mes', 'undRecurso':'Unidad'})
             datos_bodega = tabla_total[['Obra', 'Trabajador', 'EPP', 'Unidad', 'Cantidad', 'Precio', 'Total', 'Fecha', 'Mes']]
             
-            datos_bodega['Fecha'] = pd.to_datetime(datos_bodega['Fecha']).dt.date
+            datos_bodega['Fecha'] = pd.to_datetime(datos_bodega['Fecha'], dayfirst=True).dt.date
             datos_bodega['Antigüedad EPP (días)'] = (datetime.now().date() - datos_bodega['Fecha']).apply(lambda x: x.days)
             
             st.dataframe(datos_bodega, width=1100)
@@ -581,16 +581,16 @@ def main_interface():
             
                 col1, col2, col3, col4, col5 = st.columns([0.7, 1, 1, 1, 1])
                 with col1:
-                    st.metric(label='Total 3 días', value=f"{suma_total_hoy_menos3:,}")
+                    st.metric(label=f'Total {hoy_menos3}', value=f"{suma_total_hoy_menos3:,}")
 
                 with col2:
-                    st.metric(label='Total Costo antes ayer', value=f"{suma_total_antes_ayer:,}", delta=f"{variacion_porcentual_antes_ayer:.2f}%")
+                    st.metric(label=f'Total {antes_ayer}', value=f"{suma_total_antes_ayer:,}", delta=f"{variacion_porcentual_antes_ayer:.2f}%")
 
                 with col3:
-                    st.metric(label='Total Costo ayer', value=f"{suma_total_ayer:,}", delta=f"{variacion_porcentual_ayer:.2f}%")
+                    st.metric(label=f'Total {ayer}', value=f"{suma_total_ayer:,}", delta=f"{variacion_porcentual_ayer:.2f}%")
 
                 with col4:
-                    st.metric(label='Total Costo hoy', value=f"{suma_total_hoy:,}", delta=f"{variacion_porcentual_hoy:.2f}%")
+                    st.metric(label='Total hoy', value=f"{suma_total_hoy:,}", delta=f"{variacion_porcentual_hoy:.2f}%")
 
                 with col5:
                 
