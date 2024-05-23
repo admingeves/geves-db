@@ -292,7 +292,7 @@ def main_interface():
             cantidad_salidas.columns = ['nombreRecurso', 'cantidad_salidas']
 
             resultado = pd.merge(cantidad_salidas,promedio_tiempo_diferencia, on='nombreRecurso')
-            st.dataframe(resultado)
+            #st.dataframe(resultado)
 
 
 
