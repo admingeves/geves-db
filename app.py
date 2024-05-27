@@ -485,7 +485,7 @@ def main_interface():
                 margin-bottom: -10px;
             }
             .stSelectbox {
-                margin-top: 30px;
+                margin-top: 40px;
                 margin-bottom: -10px;
             }
             .block-container {
