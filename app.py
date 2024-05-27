@@ -836,7 +836,6 @@ def main_interface():
 
     if selected == 'Kardex':
         st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
-        #st.warning('Módulo no disponible')
         
         APIobras = response_obras(p1, p2)
         if APIobras is None:
@@ -854,7 +853,7 @@ def main_interface():
         
         col1,col2,col3 = st.columns([1,2,0.7])
         with col1:
-            par3=st.selectbox(label='Obra', options=[''] + list(filtro_obra), label_visibility='visible', placeholder='Obra')
+            par3=''
         
         kardex4= ''
         kardex5='01/01/2023'
@@ -885,16 +884,46 @@ def main_interface():
         total_cantidad_salidas_recurso.columns = ['codRecurso', 'total_cantidad_salidas_recurso']
         recurso = kardex.groupby('codRecurso')['recurso'].first().reset_index()
         recurso.columns = ['codRecurso', 'recurso']
+        bodega = kardex.groupby('codRecurso')['bodega'].first().reset_index()
+        bodega.columns = ['codRecurso', 'bodega']
+        obra = kardex.groupby('codRecurso')['obra'].first().reset_index()
+        obra.columns = ['codRecurso', 'obra']
         df_intermediate = pd.merge(total_valor_ingreso_recurso, total_cantidad_ingreso_recurso, on='codRecurso')
         df_intermediate2= pd.merge(df_intermediate, recurso, on='codRecurso')
-        precio_promedio_ponderado = pd.merge(df_intermediate2, total_cantidad_salidas_recurso, on='codRecurso')
-        precio_promedio_ponderado['Precio Promedio Ponderado'] = precio_promedio_ponderado['total_valor_ingreso_recurso'] / precio_promedio_ponderado['total_cantidad_ingreso_recurso']
-        precio_promedio_ponderado['stock'] = precio_promedio_ponderado['total_cantidad_ingreso_recurso'] - precio_promedio_ponderado['total_cantidad_salidas_recurso']
-        precio_promedio_ponderado['Stock Valorizado'] = precio_promedio_ponderado['Precio Promedio Ponderado'] * precio_promedio_ponderado['stock']
-        con_stock_df = precio_promedio_ponderado[['recurso', 'total_cantidad_ingreso_recurso', 'total_cantidad_salidas_recurso', 'stock']]
-        sin_stock_df = precio_promedio_ponderado[['recurso', 'total_cantidad_ingreso_recurso', 'total_cantidad_salidas_recurso', 'stock']]
-        stock_valorizado_df = precio_promedio_ponderado[['recurso', 'stock', 'Precio Promedio Ponderado', 'Stock Valorizado']]
-        total_stock_valorizado = stock_valorizado_df['Stock Valorizado'].sum()
+        df_intermediate3 = pd.merge(df_intermediate2, bodega, on='codRecurso')
+        df_intermediate4 = pd.merge(df_intermediate3, obra, on='codRecurso')
+        precio_promedio_ponderado = pd.merge(df_intermediate4, total_cantidad_salidas_recurso, on='codRecurso')
+        precio_promedio_ponderado['PPP'] = precio_promedio_ponderado['total_valor_ingreso_recurso'] / precio_promedio_ponderado['total_cantidad_ingreso_recurso']
+        precio_promedio_ponderado['Stock'] = precio_promedio_ponderado['total_cantidad_ingreso_recurso'] - precio_promedio_ponderado['total_cantidad_salidas_recurso']
+        precio_promedio_ponderado['Valor'] = precio_promedio_ponderado['PPP'] * precio_promedio_ponderado['Stock']
+        kardex_ppp_df = precio_promedio_ponderado[['obra','bodega','recurso', 'total_cantidad_ingreso_recurso', 'total_cantidad_salidas_recurso', 'Stock', 'PPP', 'Valor']]
+        kardex_ppp = kardex_ppp_df.rename(columns={'obra': 'Obra', 'bodega': 'Bodega', 'recurso': 'Recurso', 'total_cantidad_ingreso_recurso': 'Ingresos', 'total_cantidad_salidas_recurso': 'Salidas'})
+        kardex_ppp = kardex_ppp.sort_values(by='Obra', ascending=False)
+        #sin_stock_df = precio_promedio_ponderado[['recurso', 'total_cantidad_ingreso_recurso', 'total_cantidad_salidas_recurso', 'stock']]
+        stock_valorizado_df = precio_promedio_ponderado[['recurso', 'Stock', 'PPP', 'Valor']]
+        total_stock_valorizado = stock_valorizado_df['Valor'].sum()
+
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col1:
+            opciones_obras = [''] + kardex_ppp['Obra'].unique().tolist()
+            obra = st.selectbox('Obra:', opciones_obras)
+
+        if obra:
+            opciones_bodega = [''] + kardex_ppp[kardex_ppp['Obra'] == obra]['Bodega'].unique().tolist()
+        else:
+            opciones_bodega = [''] + kardex_ppp['Bodega'].unique().tolist()
+
+        with col2:
+            bodega = st.selectbox('Bodega:', opciones_bodega, key='bodega_select')
+
+        # Filtrar datos basado en selecciones
+        filtered_data = kardex_ppp
+
+        if obra:
+            filtered_data = filtered_data[filtered_data['Obra'] == obra]
+
+        if bodega:
+            filtered_data = filtered_data[filtered_data['Bodega'] == bodega]
 
         with col3:
             st.markdown("""
@@ -908,7 +937,7 @@ def main_interface():
             }
             </style>
             """, unsafe_allow_html=True)
-            #st.metric(label= 'Total Inventario', value=f"{valor_total_inventario:,.0f}")         
+
         st.markdown(
             """
             <style>
@@ -919,40 +948,32 @@ def main_interface():
             """,
             unsafe_allow_html=True
         )
-        col1,col2 = st.columns([1,3])
-        with col1:
-            #selected_recurso = st.selectbox('Recurso:', kardex['recurso'].unique())
-            #filtered_stock_valorizado = stock_valorizado_df[stock_valorizado_df['codRecurso'] == selected_recurso]
-            filtered_stock_valorizado_total = stock_valorizado_df['Stock Valorizado'].sum()
+        col1, col2 = st.columns([1, 3])
 
-        col1,col2 = st.columns([1,3])
-        with col1:
-            selected = option_menu(menu_title=None, options=['Con Stock', 'Sin Stock', 'Stock Crítico', 'Todo', 'Stock Valorizado'], icons=['box-seam', 'x-octagon', 'exclamation-octagon', 'journals', 'coin']) 
-        with col2:
-            if selected == 'Con Stock':
-                con_stock = con_stock_df[con_stock_df['stock'] > 0]
-                st.dataframe(con_stock, width=1000)
+        selected = option_menu(menu_title=None, options=['Con Stock', 'Sin Stock', 'Todo', 'Stock Valorizado'], 
+                            icons=['box-seam', 'x-octagon', 'exclamation-octagon', 'journals', 'coin'], 
+                            orientation='horizontal')
 
-            if selected == 'Sin Stock':
-                sin_stock = sin_stock_df[sin_stock_df['stock'] == 0]
-                st.dataframe(sin_stock, width=1000)
+        if selected == 'Con Stock':
+            con_stock = filtered_data[filtered_data['Stock'] > 0]
+            st.dataframe(con_stock, width=1000)
 
-            if selected == 'Stock Crítico':
-                stock_critico = con_stock_df[con_stock_df['stock'] < 4 & (con_stock_df['stock'] > 0)]
-                st.dataframe(stock_critico, width=1000)
+        if selected == 'Sin Stock':
+            sin_stock = filtered_data[filtered_data['Stock'] == 0]
+            st.dataframe(sin_stock, width=1000)
             
-            if selected == 'Todo':
-                st.dataframe(con_stock_df, width=1000)
+        if selected == 'Todo':
+            st.dataframe(filtered_data, width=1000)
 
-            if selected == 'Stock Valorizado':
-                total_stock_valorizado = stock_valorizado_df['Stock Valorizado'].sum()
-                stock_valorizado = stock_valorizado_df[stock_valorizado_df['stock'] > 0 ]
-                stock_valorizado = stock_valorizado.sort_values(by='Stock Valorizado', ascending=False)
-                st.dataframe(stock_valorizado, width=1000)
-                col1,col2 = st.columns([3,1])
-                with col3:
-                    st.metric(label= 'Stock Valorizado', value=f"{total_stock_valorizado:,.0f}")
-
+        if selected == 'Stock Valorizado':
+            total_stock_valorizado = filtered_data['Valor'].sum()
+            stock_valorizado = filtered_data[filtered_data['Stock'] > 0]
+            stock_valorizado = stock_valorizado.sort_values(by='Valor', ascending=False)
+            
+            col1, col2 = st.columns([5, 1])
+            with col2:
+                st.metric(label='Stock Valorizado', value=f"{total_stock_valorizado:,.0f}")
+            st.dataframe(stock_valorizado, width=1000)
 
 
     if selected == 'Maquinaria':
