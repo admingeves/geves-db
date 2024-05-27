@@ -111,7 +111,7 @@ def main_interface():
 #CLICK BODEGA SIDEBAR
 
     if selected == 'EPP':
-        st.title('EPP')
+        #st.title('EPP')
                
         mes_inicio,mes_fin=st.select_slider(label='Rango Fecha Bodega', options=list(meses_dict.keys()), value=['Enero','Diciembre'], label_visibility='hidden' )
         fecha_inicio = meses_dict[mes_inicio]
@@ -446,7 +446,7 @@ def main_interface():
             
         filtered_data_obra = pd.DataFrame(filtered)
         
-        st.title('Costos')
+        #st.title('Costos')
         
         col1, col2, col3, col4, col5, col6 = st.columns([1, 1, 1, 1, 1, 2])
         
@@ -485,7 +485,7 @@ def main_interface():
                 margin-bottom: -10px;
             }
             .stSelectbox {
-                margin-top: -10px;
+                margin-top: 0px;
                 margin-bottom: -10px;
             }
             .block-container {
