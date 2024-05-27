@@ -88,8 +88,9 @@ def main_interface():
             logout()
         
 #MENU DEL SIDEBAR
+        
+        selected = option_menu(menu_title=None, options=['Costos', 'EPP', 'Kardex', 'Maquinaria'], icons=['coin', 'person-badge', 'receipt', 'truck-front'])
 
-        selected = option_menu(menu_title=None, options=['EPP', 'Costos', 'Kardex', 'Maquinaria'], icons=['person-badge', 'coin', 'receipt', 'truck-front'])
         st.markdown(
             """
             <style>
@@ -517,16 +518,7 @@ def main_interface():
     #-------------------------------------------COSTOS (SUBMENU INICIO)------------------------------------------------------------------------------------------
 
             mes_inicio,mes_fin=st.select_slider(label='Rango Fecha Consumos', options=['1','2','3','4','5','6','7','8','9','10','11','12'], value=['1','12'], label_visibility='hidden' )
-            selected = option_menu(menu_title=None, options=['', 'Obras' , 'Partidas','Resumen', 'Flujo','Recursos'], icons=['bar-chart', '1-circle', '2-circle', 'list-ol','cash-coin', 'tools'], orientation='horizontal')
-
-    #-------------------------------------------COSTOS (SUBMENU FIN)------------------------------------------------------------------------------------------
-
-    #-------------------------------------------COSTOS (INDICADORES INICIO)------------------------------------------------------------------------------------------
-    #----DATAFRAME PARA CONSUMOS-----
-            #fecha_consumo= (filtered_recurso_consumo['mes'].unique())
-            #fecha_consumo_seleccionado= st.select_slider(label='Mes', options=list(mese_dict_consumo.keys()))
-            #filtered_fecha_consumo = filtered_recurso_consumo[filtered_recurso_consumo['mes'] == fecha_consumo_seleccionado] if fecha_consumo_seleccionado else filtered_recurso_consumo
-            
+            selected = option_menu(menu_title=None, options=['', 'Obras' , 'Áreas', 'Partidas','APU'], icons=['bar-chart', 'currency-dollar', 'currency-dollar', 'currency-dollar', 'tools'], orientation='horizontal')
 
             data_consumo=pd.DataFrame(filtered_recurso_consumo)
             data_consumo['total'] = data_consumo['total'].astype(int)
@@ -586,49 +578,36 @@ def main_interface():
             else:
                 variacion_porcentual_antes_ayer = 0 
 
-            with st.container(border=False):
             
-                col1, col2, col3, col4, col5 = st.columns([0.7, 1, 1, 1, 1])
-                with col1:
-                    st.metric(label=f'Total {hoy_menos3}', value=f"{suma_total_hoy_menos3:,}")
-
-                with col2:
-                    st.metric(label=f'Total {antes_ayer}', value=f"{suma_total_antes_ayer:,}", delta=f"{variacion_porcentual_antes_ayer:.2f}%")
-
-                with col3:
-                    st.metric(label=f'Total {ayer}', value=f"{suma_total_ayer:,}", delta=f"{variacion_porcentual_ayer:.2f}%")
-
-                with col4:
-                    st.metric(label='Total hoy', value=f"{suma_total_hoy:,}", delta=f"{variacion_porcentual_hoy:.2f}%")
-
-                with col5:
-                
-                    tabla_flujo_total = data_consumo[['codigoArea', 'nombrePartida', 'total', 'fecha', 'mes', 'obra']]
-                    tabla_flujo_total = tabla_flujo_total.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida', 'total': 'Total', 'fecha':'Fecha', 'mes':'Mes'})            
-                    df_flujo_total= pd.DataFrame(tabla_flujo_total)
-                    df_flujo_total['Total']=pd.to_numeric(df_flujo_total['Total'])
-                    df_flujo_total['Fecha'] = pd.to_datetime(df_flujo_total['Fecha'], dayfirst=True).dt.date            
-                    df_flujo_total['Mes']=pd.to_numeric(df_flujo_total['Mes'])
-                    mes_inicio= pd.to_numeric(mes_inicio)
-                    mes_fin= pd.to_numeric(mes_fin)
-
-                    df_filtrado_total = df_flujo_total[(df_flujo_total['Mes'] >= mes_inicio) & (df_flujo_total['Mes'] <= mes_fin)]
-                    formato_para_total= df_filtrado_total['Total'].sum()
-        
-                    st.metric(label= 'Total Costo', value=f"{formato_para_total:,}")
-                
-
-                
-
-    #-------------------------------------------COSTOS (INDICADORES FIN)------------------------------------------------------------------------------------------
-
-    #-------------------------------------------COSTOS (GRAFICOS)------------------------------------------------------------------------------------------
-
-    #----GRAFICO CONSUMOS---
-
-    #-------------------------------------------COSTOS (RESUMEN INICIO)------------------------------------------------------------------------------------------
 
             if selected == '':
+                with st.container(border=False):
+            
+                    col1, col2, col3, col4, col5 = st.columns([0.7, 1, 1, 1, 1])
+                    with col1:
+                        st.metric(label=f'{hoy_menos3}', value=f"{suma_total_hoy_menos3:,}")
+
+                    with col2:
+                        st.metric(label=f'{antes_ayer}', value=f"{suma_total_antes_ayer:,}", delta=f"{variacion_porcentual_antes_ayer:.2f}%")
+
+                    with col3:
+                        st.metric(label=f'{ayer}', value=f"{suma_total_ayer:,}", delta=f"{variacion_porcentual_ayer:.2f}%")
+
+                    with col4:
+                        st.metric(label='Hoy', value=f"{suma_total_hoy:,}", delta=f"{variacion_porcentual_hoy:.2f}%")
+
+                    with col5:
+                        tabla_flujo_total = data_consumo[['codigoArea', 'nombrePartida', 'total', 'fecha', 'mes', 'obra']]
+                        tabla_flujo_total = tabla_flujo_total.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida', 'total': 'Total', 'fecha':'Fecha', 'mes':'Mes'})            
+                        df_flujo_total= pd.DataFrame(tabla_flujo_total)
+                        df_flujo_total['Total']=pd.to_numeric(df_flujo_total['Total'])
+                        df_flujo_total['Fecha'] = pd.to_datetime(df_flujo_total['Fecha'], dayfirst=True).dt.date            
+                        df_flujo_total['Mes']=pd.to_numeric(df_flujo_total['Mes'])
+                        mes_inicio= pd.to_numeric(mes_inicio)
+                        mes_fin= pd.to_numeric(mes_fin)
+                        df_filtrado_total = df_flujo_total[(df_flujo_total['Mes'] >= mes_inicio) & (df_flujo_total['Mes'] <= mes_fin)]
+                        formato_para_total= df_filtrado_total['Total'].sum()       
+                        st.metric(label= 'Total Costo', value=f"{formato_para_total:,}")
                 
                 tabla_total = data_consumo[['obra', 'total', 'fecha', 'mes']]
                 tabla_total = tabla_total.rename(columns={'obra': 'Obra', 'total': 'Total', 'fecha':'Fecha', 'mes':'Mes'})
@@ -659,7 +638,9 @@ def main_interface():
 
                 col1,col2,col3 = st.columns([1,1,1])
                 with col1:
-                        fig1 = px.pie(suma_obra_consumo, values='total', names='obra', title='Distribución por Obra')
+                        suma_obra_consumo_sorted = suma_obra_consumo.sort_values(by='total', ascending=False)
+                        top_5_suma_obra_consumo = suma_obra_consumo_sorted.head(5)
+                        fig1 = px.pie(top_5_suma_obra_consumo, values='total', names='obra', title='Distribución por Obra')
                         fig1.update_layout(
                         showlegend=False,  # Quitar la leyenda
                         margin=dict(l=40, r=40, t=40, b=40)
@@ -690,19 +671,19 @@ def main_interface():
                         fig3.update_yaxes(title_text='', showgrid=False)  # Quitar el título del eje y
                         st.plotly_chart(fig3, use_container_width=True)
 
-                #st.dataframe(pivot_df_total, width=1100)
-            if selected == 'Resumen':
+               
+           # if selected == 'Resumen':
 
-                tabla_resumen = data_consumo[['codigoArea', 'nombrePartida', 'nombreRecurso','unidad', 'cantidad', 'precio', 'total', 'mes']]
-                tabla_resumen = tabla_resumen.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida', 'nombreRecurso': 'Recurso', 'unidad':'Unidad', 'cantidad': 'Cantidad', 'precio': 'Precio', 'total': 'Total'})
-                tabla_resumen['Total']=pd.to_numeric(tabla_resumen['Total'])
-                tabla_resumen['Precio']=pd.to_numeric(tabla_resumen['Precio'])
-                mes_inicio= pd.to_numeric(mes_inicio)
-                mes_fin= pd.to_numeric(mes_fin)
-                df_filtrado = tabla_resumen[(tabla_resumen['mes'] >= mes_inicio) & (tabla_resumen['mes'] <= mes_fin)]
+            #    tabla_resumen = data_consumo[['codigoArea', 'nombrePartida', 'nombreRecurso','unidad', 'cantidad', 'precio', 'total', 'mes']]
+             #   tabla_resumen = tabla_resumen.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida', 'nombreRecurso': 'Recurso', 'unidad':'Unidad', 'cantidad': 'Cantidad', 'precio': 'Precio', 'total': 'Total'})
+              #  tabla_resumen['Total']=pd.to_numeric(tabla_resumen['Total'])
+               # tabla_resumen['Precio']=pd.to_numeric(tabla_resumen['Precio'])
+                #mes_inicio= pd.to_numeric(mes_inicio)
+                #mes_fin= pd.to_numeric(mes_fin)
+                #df_filtrado = tabla_resumen[(tabla_resumen['mes'] >= mes_inicio) & (tabla_resumen['mes'] <= mes_fin)]
 
-                with st.container(border=False, height=600):
-                    st.dataframe(df_filtrado, width=1100)
+                #with st.container(border=False, height=600):
+                 #   st.dataframe(df_filtrado, width=1100)
 
             if selected == 'Obras':
                 col1,col2 = st.columns([1,4])
@@ -730,6 +711,34 @@ def main_interface():
                         pivot_obras_dia_filtrado = obras_dia_filtrado.pivot_table(index = ['Obra'], columns = 'Fecha', values = 'Total Costo', aggfunc='sum', margins=True, margins_name='Total Costo').fillna(0).astype(int)
                         pivot_formato_obras_dia_filtrado = pivot_obras_dia_filtrado.applymap(lambda x: f'{x:,}')
                         st.dataframe(pivot_formato_obras_dia_filtrado, width = 1100)
+
+            if selected == 'Áreas':
+                col1,col2 = st.columns([1,4])
+                with col1:
+                    selected = option_menu(menu_title=None, options=['Mensual', 'Diario'], icons=['calendar2-month','calendar2-day'], orientation='vertical')
+                
+                with col2:
+                    if selected == 'Mensual':
+                        tabla_areas = data_consumo[['codigoArea', 'mes', 'total']]    
+                        tabla_areas = tabla_areas.rename(columns={'codigoArea':'Área', 'total':'Total Costo', 'mes':'Mes'})
+                        tabla_areas['Total Costo'] = pd.to_numeric(tabla_areas['Total Costo'])
+                        mes_inicio= pd.to_numeric(mes_inicio)
+                        mes_fin= pd.to_numeric(mes_fin)
+                        areas_filtrado = tabla_areas[(tabla_areas['Mes'] >= mes_inicio) & (tabla_areas['Mes'] <= mes_fin)]
+                        pivot_areas_filtrado = areas_filtrado.pivot_table(index = ['Área'], columns = 'Mes', values = 'Total Costo', aggfunc='sum', margins=True, margins_name='Total Costo').fillna(0).astype(int)
+                        pivot_formato_areas_filtrado = pivot_areas_filtrado.applymap(lambda x: f'{x:,}')
+                        st.dataframe(pivot_formato_areas_filtrado, width = 1100)
+                    if selected == 'Diario':
+                        tabla_areas_dia = data_consumo[['codigoArea', 'mes' ,'fecha', 'total']]
+                        tabla_areas_dia = tabla_areas_dia.rename(columns = {'codigoArea':'Área', 'fecha':'Fecha', 'total':'Total Costo', 'mes':'Mes'})
+                        tabla_areas_dia['Total Costo'] = pd.to_numeric(tabla_areas_dia['Total Costo'])
+                        mes_inicio= pd.to_numeric(mes_inicio)
+                        mes_fin= pd.to_numeric(mes_fin)
+                        areas_dia_filtrado = tabla_areas_dia[(tabla_areas_dia['Mes'] >= mes_inicio) & (tabla_areas_dia['Mes'] <= mes_fin)]
+                        pivot_areas_dia_filtrado = areas_dia_filtrado.pivot_table(index = ['Área'], columns = 'Fecha', values = 'Total Costo', aggfunc='sum', margins=True, margins_name='Total Costo').fillna(0).astype(int)
+                        pivot_formato_areas_dia_filtrado = pivot_areas_dia_filtrado.applymap(lambda x: f'{x:,}')
+                        st.dataframe(pivot_formato_areas_dia_filtrado, width = 1100)
+
 
             if selected == 'Partidas':
                 col1,col2 = st.columns([1,4])
@@ -760,50 +769,63 @@ def main_interface():
 
 
 
-            if selected == 'Flujo':
+            #if selected == 'Flujo':
 
-                tabla_flujo_economico = data_consumo[['codigoArea', 'nombrePartida', 'total', 'fecha', 'mes']]
-                tabla_flujo_economico = tabla_flujo_economico.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida', 'total': 'Total', 'fecha':'Fecha', 'mes':'Mes'})            
+             #   tabla_flujo_economico = data_consumo[['codigoArea', 'nombrePartida', 'total', 'fecha', 'mes']]
+              #  tabla_flujo_economico = tabla_flujo_economico.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida', 'total': 'Total', 'fecha':'Fecha', 'mes':'Mes'})            
             
-                df_flujo_economico= pd.DataFrame(tabla_flujo_economico)
-                df_flujo_economico['Total']=pd.to_numeric(df_flujo_economico['Total'])
-                df_flujo_economico['Fecha'] = pd.to_datetime(df_flujo_economico['Fecha'], dayfirst=True).dt.date            
-                df_flujo_economico['Mes']=pd.to_numeric(df_flujo_economico['Mes'])
-                mes_inicio= pd.to_numeric(mes_inicio)
-                mes_fin= pd.to_numeric(mes_fin)
+              #  df_flujo_economico= pd.DataFrame(tabla_flujo_economico)
+              #  df_flujo_economico['Total']=pd.to_numeric(df_flujo_economico['Total'])
+              #  df_flujo_economico['Fecha'] = pd.to_datetime(df_flujo_economico['Fecha'], dayfirst=True).dt.date            
+              #  df_flujo_economico['Mes']=pd.to_numeric(df_flujo_economico['Mes'])
+              #  mes_inicio= pd.to_numeric(mes_inicio)
+              #  mes_fin= pd.to_numeric(mes_fin)
 
-                df_filtrado_fe = df_flujo_economico[(df_flujo_economico['Mes'] >= mes_inicio) & (df_flujo_economico['Mes'] <= mes_fin)]
+               # df_filtrado_fe = df_flujo_economico[(df_flujo_economico['Mes'] >= mes_inicio) & (df_flujo_economico['Mes'] <= mes_fin)]
                 # Crear la pivot table
-                pivot_df_fe = df_filtrado_fe.pivot_table(index=['Área', 'Partida'], columns='Fecha', values='Total', aggfunc='sum', margins=True, margins_name='Total').fillna(0).astype(int)
+               # pivot_df_fe = df_filtrado_fe.pivot_table(index=['Área', 'Partida'], columns='Fecha', values='Total', aggfunc='sum', margins=True, margins_name='Total').fillna(0).astype(int)
 
-                formatted_pivot_df_fe = pivot_df_fe.applymap(lambda x: f'{x:,}')
+               # formatted_pivot_df_fe = pivot_df_fe.applymap(lambda x: f'{x:,}')
 
                     # Mostrar la pivot table
                     
-                st.dataframe(formatted_pivot_df_fe, width=1100)            
+               # st.dataframe(formatted_pivot_df_fe, width=1100)            
                 
 
-            if selected == 'Recursos':
+            if selected == 'APU':
+                col1,col2 = st.columns([1,4])
+                with col1:
+                    selected = option_menu(menu_title=None, options=['Mensual', 'Diario'], icons=['calendar2-month','calendar2-day'], orientation='vertical')
+                with col2:
+                    if selected == 'Mensual':
+                        tabla_uso_recurso = data_consumo[['codigoArea', 'nombrePartida', 'nombreRecurso', 'unidad', 'cantidad','fecha', 'mes']]
+                        tabla_uso_recurso = tabla_uso_recurso.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida','nombreRecurso': 'Recurso', 'unidad':'Unidad', 'cantidad': 'Cantidad', 'fecha':'Fecha', 'mes':'Mes'})                            
+                        df_uso_recurso= pd.DataFrame(tabla_uso_recurso)
+                        df_uso_recurso['Cantidad']=pd.to_numeric(df_uso_recurso['Cantidad'])
+                        df_uso_recurso['Fecha'] = pd.to_datetime(df_uso_recurso['Fecha'], dayfirst=True).dt.date
+                        df_uso_recurso['Mes']=pd.to_numeric(df_uso_recurso['Mes'])
+                        mes_inicio= pd.to_numeric(mes_inicio)
+                        mes_fin= pd.to_numeric(mes_fin)
+                        df_filtrado_uso = df_uso_recurso[(df_uso_recurso['Mes'] >= mes_inicio) & (df_uso_recurso['Mes'] <= mes_fin)]
+                        pivot_df = df_filtrado_uso.pivot_table(index=['Área', 'Partida', 'Recurso', 'Unidad'], columns='Mes', values='Cantidad', aggfunc='sum', margins=True, margins_name='Total').fillna(0).astype(int)
+                        formatted_pivot_df = pivot_df.applymap(lambda x: f'{x:,}')
+                            
+                        st.dataframe(formatted_pivot_df, width=1100)
 
-                tabla_uso_recurso = data_consumo[['codigoArea', 'nombrePartida', 'nombreRecurso', 'unidad', 'cantidad','fecha', 'mes']]
-                tabla_uso_recurso = tabla_uso_recurso.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida','nombreRecurso': 'Recurso', 'unidad':'Unidad', 'cantidad': 'Cantidad', 'fecha':'Fecha', 'mes':'Mes'})                
-            
-                df_uso_recurso= pd.DataFrame(tabla_uso_recurso)
-                df_uso_recurso['Cantidad']=pd.to_numeric(df_uso_recurso['Cantidad'])
-                df_uso_recurso['Fecha'] = pd.to_datetime(df_uso_recurso['Fecha'], dayfirst=True).dt.date
-                df_uso_recurso['Mes']=pd.to_numeric(df_uso_recurso['Mes'])
-                mes_inicio= pd.to_numeric(mes_inicio)
-                mes_fin= pd.to_numeric(mes_fin)
-
-                df_filtrado_uso = df_uso_recurso[(df_uso_recurso['Mes'] >= mes_inicio) & (df_uso_recurso['Mes'] <= mes_fin)]
-                # Crear la pivot table
-                pivot_df = df_filtrado_uso.pivot_table(index=['Área', 'Partida', 'Recurso', 'Unidad'], columns='Fecha', values='Cantidad', aggfunc='sum', margins=True, margins_name='Total').fillna(0).astype(int)
-
-                formatted_pivot_df = pivot_df.applymap(lambda x: f'{x:,}')
-
-                    # Mostrar la pivot table
-                    
-                st.dataframe(formatted_pivot_df, width=1100)
+                    if selected == 'Diario':
+                        tabla_uso_recurso_dia = data_consumo[['codigoArea', 'nombrePartida', 'nombreRecurso', 'unidad', 'cantidad','fecha', 'mes']]
+                        tabla_uso_recurso_dia = tabla_uso_recurso_dia.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida','nombreRecurso': 'Recurso', 'unidad':'Unidad', 'cantidad': 'Cantidad', 'fecha':'Fecha', 'mes':'Mes'})                            
+                        df_uso_recurso_dia= pd.DataFrame(tabla_uso_recurso_dia)
+                        df_uso_recurso_dia['Cantidad']=pd.to_numeric(df_uso_recurso_dia['Cantidad'])
+                        df_uso_recurso_dia['Fecha'] = pd.to_datetime(df_uso_recurso_dia['Fecha'], dayfirst=True).dt.date
+                        df_uso_recurso_dia['Mes']=pd.to_numeric(df_uso_recurso_dia['Mes'])
+                        mes_inicio= pd.to_numeric(mes_inicio)
+                        mes_fin= pd.to_numeric(mes_fin)
+                        df_filtrado_uso_dia = df_uso_recurso_dia[(df_uso_recurso_dia['Mes'] >= mes_inicio) & (df_uso_recurso_dia['Mes'] <= mes_fin)]
+                        pivot_df_dia = df_filtrado_uso_dia.pivot_table(index=['Área', 'Partida', 'Recurso', 'Unidad'], columns='Fecha', values='Cantidad', aggfunc='sum', margins=True, margins_name='Total').fillna(0).astype(int)
+                        formatted_pivot_df_dia = pivot_df_dia.applymap(lambda x: f'{x:,}')
+                            
+                        st.dataframe(formatted_pivot_df_dia, width=1100)
 
         else:
                 st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
