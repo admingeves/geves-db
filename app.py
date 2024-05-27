@@ -141,7 +141,7 @@ def main_interface():
             """
             <style>
             .stSlider {
-                margin-top: -30px;
+                margin-top: 40px;
                 margin-bottom: -10px;
             }
             .stSelectbox {
