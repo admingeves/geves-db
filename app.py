@@ -835,35 +835,13 @@ def main_interface():
 
 
     if selected == 'Kardex':
-        st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
-        
-        APIobras = response_obras(p1, p2)
-        if APIobras is None:
-            st.error("Error: No se pudo obtener los datos de obras.")
-        else:
-            datos_obra = APIobras.json().get('datos', [])
-            columns_obra = ['codObra']
-            if datos_obra is not None:
-                filtered = [{column: entry[column] for column in columns_obra} for entry in datos_obra]
-            else:
-                filtered = []
-            
-        filtered_data_obra = pd.DataFrame(filtered)
-        filtro_obra = filtered_data_obra['codObra'].unique()
-        
-        col1,col2,col3 = st.columns([1,2,0.7])
-        with col1:
-            par3=''
-        
-        kardex4= ''
-        kardex5='01/01/2023'
-        kardex6='31/12/2024'            
+        st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)           
 
-        APIkardex = response_kardex(p1,p2,par3,kardex4,kardex5,kardex6)
+        APIkardex = response_kardex(p1,p2)
         datos = APIkardex.json()['datos']
-        selected_columns = [ 'obra', 'bodega', 'tipoMovimiento', 'nroMovmiento', 'proveedor', 'digita', 'codRecurso', 'recurso', 'unidad', 'fechaMov', 'entra', 'sale', 'precio', 'total', 'codClase', 'clase', 'tipoCosto', 'codigoArea', 'area', 'codPartida', 'partida', 'nombreRecibe', 'nombreObra', 'nroEquipo', 'nroOT']
-        filtered_kardex = [{column: entry[column] for column in selected_columns} for entry in datos]
-    
+        selected_columns = [ 'obra', 'bodega', 'codRecurso', 'recurso', 'unidad', 'fechaMov', 'entra', 'sale', 'precio', 'total']
+        #selected_columns = [ 'obra', 'bodega', 'tipoMovimiento', 'nroMovmiento', 'proveedor', 'digita', 'codRecurso', 'recurso', 'unidad', 'fechaMov', 'entra', 'sale', 'precio', 'total', 'codClase', 'clase', 'tipoCosto', 'codigoArea', 'area', 'codPartida', 'partida', 'nombreRecibe', 'nombreObra', 'nroEquipo', 'nroOT']
+        filtered_kardex = [{column: entry[column] for column in selected_columns} for entry in datos] 
         kardex=pd.DataFrame(filtered_kardex)
         kardex['fechaMov']=pd.to_datetime(kardex['fechaMov'], dayfirst=True).dt.date
         kardex['entra'] = kardex['entra'].str.replace('.', '', regex=False).str.replace(',', '.', regex=False)
@@ -872,7 +850,6 @@ def main_interface():
         kardex['sale']=pd.to_numeric(kardex['sale'])
         kardex['precio'] = kardex['precio'].str.replace('.', '', regex=False).str.replace(',', '.', regex=False)
         kardex['precio']=pd.to_numeric(kardex['precio'])
-        
 
         kardex['valor_ingreso'] = kardex['entra'] * kardex['precio']
         
@@ -893,15 +870,25 @@ def main_interface():
         df_intermediate3 = pd.merge(df_intermediate2, bodega, on='codRecurso')
         df_intermediate4 = pd.merge(df_intermediate3, obra, on='codRecurso')
         precio_promedio_ponderado = pd.merge(df_intermediate4, total_cantidad_salidas_recurso, on='codRecurso')
+        
+        
         precio_promedio_ponderado['PPP'] = precio_promedio_ponderado['total_valor_ingreso_recurso'] / precio_promedio_ponderado['total_cantidad_ingreso_recurso']
         precio_promedio_ponderado['Stock'] = precio_promedio_ponderado['total_cantidad_ingreso_recurso'] - precio_promedio_ponderado['total_cantidad_salidas_recurso']
         precio_promedio_ponderado['Valor'] = precio_promedio_ponderado['PPP'] * precio_promedio_ponderado['Stock']
+        
+        precio_promedio_ponderado['PPP'].fillna(0, inplace=True)
+        precio_promedio_ponderado['PPP'] = precio_promedio_ponderado['PPP'].astype(int)
+        
+        precio_promedio_ponderado['Stock'] = precio_promedio_ponderado['Stock'].astype(int)
+        precio_promedio_ponderado['Valor'].fillna(0, inplace=True)
+        precio_promedio_ponderado['Valor'] = precio_promedio_ponderado['Valor'].astype(int)
+        
+        
         kardex_ppp_df = precio_promedio_ponderado[['obra','bodega','recurso', 'total_cantidad_ingreso_recurso', 'total_cantidad_salidas_recurso', 'Stock', 'PPP', 'Valor']]
         kardex_ppp = kardex_ppp_df.rename(columns={'obra': 'Obra', 'bodega': 'Bodega', 'recurso': 'Recurso', 'total_cantidad_ingreso_recurso': 'Ingresos', 'total_cantidad_salidas_recurso': 'Salidas'})
         kardex_ppp = kardex_ppp.sort_values(by='Obra', ascending=False)
-        #sin_stock_df = precio_promedio_ponderado[['recurso', 'total_cantidad_ingreso_recurso', 'total_cantidad_salidas_recurso', 'stock']]
-        stock_valorizado_df = precio_promedio_ponderado[['recurso', 'Stock', 'PPP', 'Valor']]
-        total_stock_valorizado = stock_valorizado_df['Valor'].sum()
+
+
 
         col1, col2, col3 = st.columns([1, 1, 1])
         with col1:
@@ -916,7 +903,6 @@ def main_interface():
         with col2:
             bodega = st.selectbox('Bodega:', opciones_bodega, key='bodega_select')
 
-        # Filtrar datos basado en selecciones
         filtered_data = kardex_ppp
 
         if obra:
@@ -924,20 +910,6 @@ def main_interface():
 
         if bodega:
             filtered_data = filtered_data[filtered_data['Bodega'] == bodega]
-
-        with col3:
-            st.markdown("""
-            <style>
-            div[data-testid="metric-container"] {
-                text-align: center;
-            }
-            div[data-testid="stMetricValue"] {
-                font-size: 20px;
-                justify-content: center;
-            }
-            </style>
-            """, unsafe_allow_html=True)
-
         st.markdown(
             """
             <style>
@@ -948,8 +920,6 @@ def main_interface():
             """,
             unsafe_allow_html=True
         )
-        col1, col2 = st.columns([1, 3])
-
         selected = option_menu(menu_title=None, options=['Con Stock', 'Sin Stock', 'Todo', 'Stock Valorizado'], 
                             icons=['box-seam', 'x-octagon', 'exclamation-octagon', 'journals', 'coin'], 
                             orientation='horizontal')
@@ -970,10 +940,13 @@ def main_interface():
             stock_valorizado = filtered_data[filtered_data['Stock'] > 0]
             stock_valorizado = stock_valorizado.sort_values(by='Valor', ascending=False)
             
-            col1, col2 = st.columns([5, 1])
+            col1, col2 = st.columns([4, 1])
             with col2:
                 st.metric(label='Stock Valorizado', value=f"{total_stock_valorizado:,.0f}")
             st.dataframe(stock_valorizado, width=1000)
+
+
+
 
 
     if selected == 'Maquinaria':
