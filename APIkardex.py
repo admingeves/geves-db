@@ -9,7 +9,7 @@ def response_kardex(p1,p2,kardex3,kardex4,kardex5,kardex6):
         'p1':p1,
         'p2':p2,
         'p3':kardex3,
-        'p4':kardex4,
+        'p4':'',
         'p5':kardex5,
         'p6':kardex6}
 
