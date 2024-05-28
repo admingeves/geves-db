@@ -463,9 +463,7 @@ def main_interface():
         
         APIconsumos = response_consumo(p1, p2, par3, par4)
         datos = APIconsumos.json()['datos']
-        # Columnas que voy a llamar de 'datos'
         columns = ['obra', 'cantidad', 'tipoCosto', 'codigoArea', 'nombrePartida', 'nombreRecurso', 'fecha', 'total', 'unidad', 'precio','mes', 'tipoDoc']
-        # Armar un nuevo DF para mostrar las columnas seleccionadas
         filtered = [{column: entry[column] for column in columns} for entry in datos]
 
 #-------------------------------------------COSTOS (LLAMADA APIS FIN)------------------------------------------------------------------------------------------
@@ -578,24 +576,17 @@ def main_interface():
             else:
                 variacion_porcentual_antes_ayer = 0 
 
-            
-
             if selected == '':
                 with st.container(border=False):
-            
                     col1, col2, col3, col4, col5 = st.columns([0.7, 1, 1, 1, 1])
                     with col1:
                         st.metric(label=f'{hoy_menos3}', value=f"{suma_total_hoy_menos3:,}")
-
                     with col2:
                         st.metric(label=f'{antes_ayer}', value=f"{suma_total_antes_ayer:,}", delta=f"{variacion_porcentual_antes_ayer:.2f}%")
-
                     with col3:
                         st.metric(label=f'{ayer}', value=f"{suma_total_ayer:,}", delta=f"{variacion_porcentual_ayer:.2f}%")
-
                     with col4:
                         st.metric(label='Hoy', value=f"{suma_total_hoy:,}", delta=f"{variacion_porcentual_hoy:.2f}%")
-
                     with col5:
                         tabla_flujo_total = data_consumo[['codigoArea', 'nombrePartida', 'total', 'fecha', 'mes', 'obra']]
                         tabla_flujo_total = tabla_flujo_total.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida', 'total': 'Total', 'fecha':'Fecha', 'mes':'Mes'})            
@@ -670,20 +661,6 @@ def main_interface():
                         fig3.update_xaxes(title_text='', showgrid=False)  # Quitar el título del eje x
                         fig3.update_yaxes(title_text='', showgrid=False)  # Quitar el título del eje y
                         st.plotly_chart(fig3, use_container_width=True)
-
-               
-           # if selected == 'Resumen':
-
-            #    tabla_resumen = data_consumo[['codigoArea', 'nombrePartida', 'nombreRecurso','unidad', 'cantidad', 'precio', 'total', 'mes']]
-             #   tabla_resumen = tabla_resumen.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida', 'nombreRecurso': 'Recurso', 'unidad':'Unidad', 'cantidad': 'Cantidad', 'precio': 'Precio', 'total': 'Total'})
-              #  tabla_resumen['Total']=pd.to_numeric(tabla_resumen['Total'])
-               # tabla_resumen['Precio']=pd.to_numeric(tabla_resumen['Precio'])
-                #mes_inicio= pd.to_numeric(mes_inicio)
-                #mes_fin= pd.to_numeric(mes_fin)
-                #df_filtrado = tabla_resumen[(tabla_resumen['mes'] >= mes_inicio) & (tabla_resumen['mes'] <= mes_fin)]
-
-                #with st.container(border=False, height=600):
-                 #   st.dataframe(df_filtrado, width=1100)
 
             if selected == 'Obras':
                 col1,col2 = st.columns([1,4])
@@ -765,32 +742,7 @@ def main_interface():
                         partidas_dia_filtrado = tabla_partidas_dia[(tabla_partidas_dia['Mes'] >= mes_inicio) & (tabla_partidas_dia['Mes'] <= mes_fin)]
                         pivot_partidas_dia_filtrado = partidas_dia_filtrado.pivot_table(index = ['Partida'], columns = 'Fecha', values = 'Total Costo', aggfunc='sum', margins=True, margins_name='Total Costo').fillna(0).astype(int)
                         pivot_formato_partidas_dia_filtrado = pivot_partidas_dia_filtrado.applymap(lambda x: f'{x:,}')
-                        st.dataframe(pivot_formato_partidas_dia_filtrado, width = 1100)
-
-
-
-            #if selected == 'Flujo':
-
-             #   tabla_flujo_economico = data_consumo[['codigoArea', 'nombrePartida', 'total', 'fecha', 'mes']]
-              #  tabla_flujo_economico = tabla_flujo_economico.rename(columns={'codigoArea': 'Área','nombrePartida': 'Partida', 'total': 'Total', 'fecha':'Fecha', 'mes':'Mes'})            
-            
-              #  df_flujo_economico= pd.DataFrame(tabla_flujo_economico)
-              #  df_flujo_economico['Total']=pd.to_numeric(df_flujo_economico['Total'])
-              #  df_flujo_economico['Fecha'] = pd.to_datetime(df_flujo_economico['Fecha'], dayfirst=True).dt.date            
-              #  df_flujo_economico['Mes']=pd.to_numeric(df_flujo_economico['Mes'])
-              #  mes_inicio= pd.to_numeric(mes_inicio)
-              #  mes_fin= pd.to_numeric(mes_fin)
-
-               # df_filtrado_fe = df_flujo_economico[(df_flujo_economico['Mes'] >= mes_inicio) & (df_flujo_economico['Mes'] <= mes_fin)]
-                # Crear la pivot table
-               # pivot_df_fe = df_filtrado_fe.pivot_table(index=['Área', 'Partida'], columns='Fecha', values='Total', aggfunc='sum', margins=True, margins_name='Total').fillna(0).astype(int)
-
-               # formatted_pivot_df_fe = pivot_df_fe.applymap(lambda x: f'{x:,}')
-
-                    # Mostrar la pivot table
-                    
-               # st.dataframe(formatted_pivot_df_fe, width=1100)            
-                
+                        st.dataframe(pivot_formato_partidas_dia_filtrado, width = 1100)              
 
             if selected == 'APU':
                 col1,col2 = st.columns([1,4])
@@ -836,118 +788,102 @@ def main_interface():
 
     if selected == 'Kardex':
         st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)           
+        APIobras = response_obras(p1, p2)
+        if APIobras is None:
+            st.error("Error: No se pudo obtener los datos de obras.")
+        else:
+            datos_obra = APIobras.json().get('datos', [])
+            columns_obra = ['codObra']
+            if datos_obra is not None:
+                filtered = [{column: entry[column] for column in columns_obra} for entry in datos_obra]
+            else:
+                filtered = []
 
-        APIkardex = response_kardex(p1,p2)
+        filtered_data_obra = pd.DataFrame(filtered)
+        col1, col2, col3 = st.columns([1, 1, 1])    
+        
+        with col1:
+            filtro_obra = filtered_data_obra['codObra'].unique()
+            kardex3 = st.selectbox(label='Obra', options=[''] + list(filtro_obra), label_visibility='visible', placeholder='Obra')
+
+        APIkardex = response_kardex(p1,p2,kardex3)
         datos = APIkardex.json()['datos']
         selected_columns = [ 'obra', 'bodega', 'codRecurso', 'recurso', 'unidad', 'fechaMov', 'entra', 'sale', 'precio', 'total']
         #selected_columns = [ 'obra', 'bodega', 'tipoMovimiento', 'nroMovmiento', 'proveedor', 'digita', 'codRecurso', 'recurso', 'unidad', 'fechaMov', 'entra', 'sale', 'precio', 'total', 'codClase', 'clase', 'tipoCosto', 'codigoArea', 'area', 'codPartida', 'partida', 'nombreRecibe', 'nombreObra', 'nroEquipo', 'nroOT']
         filtered_kardex = [{column: entry[column] for column in selected_columns} for entry in datos] 
-        kardex=pd.DataFrame(filtered_kardex)
-        kardex['fechaMov']=pd.to_datetime(kardex['fechaMov'], dayfirst=True).dt.date
-        kardex['entra'] = kardex['entra'].str.replace('.', '', regex=False).str.replace(',', '.', regex=False)
-        kardex['sale'] = kardex['sale'].str.replace('.', '', regex=False).str.replace(',', '.', regex=False)
-        kardex['entra']=pd.to_numeric(kardex['entra'])
-        kardex['sale']=pd.to_numeric(kardex['sale'])
-        kardex['precio'] = kardex['precio'].str.replace('.', '', regex=False).str.replace(',', '.', regex=False)
-        kardex['precio']=pd.to_numeric(kardex['precio'])
-
-        kardex['valor_ingreso'] = kardex['entra'] * kardex['precio']
         
-        total_valor_ingreso_recurso = kardex.groupby('codRecurso')['valor_ingreso'].sum().reset_index()
-        total_valor_ingreso_recurso.columns = ['codRecurso', 'total_valor_ingreso_recurso']
-        total_cantidad_ingreso_recurso = kardex.groupby('codRecurso')['entra'].sum().reset_index()
-        total_cantidad_ingreso_recurso.columns = ['codRecurso', 'total_cantidad_ingreso_recurso']
-        total_cantidad_salidas_recurso = kardex.groupby('codRecurso')['sale'].sum().reset_index()
-        total_cantidad_salidas_recurso.columns = ['codRecurso', 'total_cantidad_salidas_recurso']
-        recurso = kardex.groupby('codRecurso')['recurso'].first().reset_index()
-        recurso.columns = ['codRecurso', 'recurso']
-        bodega = kardex.groupby('codRecurso')['bodega'].first().reset_index()
-        bodega.columns = ['codRecurso', 'bodega']
-        obra = kardex.groupby('codRecurso')['obra'].first().reset_index()
-        obra.columns = ['codRecurso', 'obra']
-        df_intermediate = pd.merge(total_valor_ingreso_recurso, total_cantidad_ingreso_recurso, on='codRecurso')
-        df_intermediate2= pd.merge(df_intermediate, recurso, on='codRecurso')
-        df_intermediate3 = pd.merge(df_intermediate2, bodega, on='codRecurso')
-        df_intermediate4 = pd.merge(df_intermediate3, obra, on='codRecurso')
-        precio_promedio_ponderado = pd.merge(df_intermediate4, total_cantidad_salidas_recurso, on='codRecurso')
+        if filtered_kardex:
         
-        
-        precio_promedio_ponderado['PPP'] = precio_promedio_ponderado['total_valor_ingreso_recurso'] / precio_promedio_ponderado['total_cantidad_ingreso_recurso']
-        precio_promedio_ponderado['Stock'] = precio_promedio_ponderado['total_cantidad_ingreso_recurso'] - precio_promedio_ponderado['total_cantidad_salidas_recurso']
-        precio_promedio_ponderado['Valor'] = precio_promedio_ponderado['PPP'] * precio_promedio_ponderado['Stock']
-        
-        precio_promedio_ponderado['PPP'].fillna(0, inplace=True)
-        precio_promedio_ponderado['PPP'] = precio_promedio_ponderado['PPP'].astype(int)
-        
-        precio_promedio_ponderado['Stock'] = precio_promedio_ponderado['Stock'].astype(int)
-        precio_promedio_ponderado['Valor'].fillna(0, inplace=True)
-        precio_promedio_ponderado['Valor'] = precio_promedio_ponderado['Valor'].astype(int)
-        
-        
-        kardex_ppp_df = precio_promedio_ponderado[['obra','bodega','recurso', 'total_cantidad_ingreso_recurso', 'total_cantidad_salidas_recurso', 'Stock', 'PPP', 'Valor']]
-        kardex_ppp = kardex_ppp_df.rename(columns={'obra': 'Obra', 'bodega': 'Bodega', 'recurso': 'Recurso', 'total_cantidad_ingreso_recurso': 'Ingresos', 'total_cantidad_salidas_recurso': 'Salidas'})
-        kardex_ppp = kardex_ppp.sort_values(by='Obra', ascending=False)
+            kardex=pd.DataFrame(filtered_kardex)
+            kardex['fechaMov']=pd.to_datetime(kardex['fechaMov'], dayfirst=True).dt.date
+            kardex['entra'] = kardex['entra'].str.replace('.', '', regex=False).str.replace(',', '.', regex=False)
+            kardex['sale'] = kardex['sale'].str.replace('.', '', regex=False).str.replace(',', '.', regex=False)
+            kardex['entra']=pd.to_numeric(kardex['entra'])
+            kardex['sale']=pd.to_numeric(kardex['sale'])
+            kardex['precio'] = kardex['precio'].str.replace('.', '', regex=False).str.replace(',', '.', regex=False)
+            kardex['precio']=pd.to_numeric(kardex['precio'])
 
-
-
-        col1, col2, col3 = st.columns([1, 1, 1])
-        with col1:
-            opciones_obras = [''] + kardex_ppp['Obra'].unique().tolist()
-            obra = st.selectbox('Obra:', opciones_obras)
-
-        if obra:
-            opciones_bodega = [''] + kardex_ppp[kardex_ppp['Obra'] == obra]['Bodega'].unique().tolist()
-        else:
-            opciones_bodega = [''] + kardex_ppp['Bodega'].unique().tolist()
-
-        with col2:
-            bodega = st.selectbox('Bodega:', opciones_bodega, key='bodega_select')
-
-        filtered_data = kardex_ppp
-
-        if obra:
-            filtered_data = filtered_data[filtered_data['Obra'] == obra]
-
-        if bodega:
-            filtered_data = filtered_data[filtered_data['Bodega'] == bodega]
-        st.markdown(
-            """
-            <style>
-            .custom-margin {
-                margin-top: 80px;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True
-        )
-        selected = option_menu(menu_title=None, options=['Con Stock', 'Sin Stock', 'Todo', 'Stock Valorizado'], 
-                            icons=['box-seam', 'x-octagon', 'exclamation-octagon', 'journals', 'coin'], 
-                            orientation='horizontal')
-
-        if selected == 'Con Stock':
-            con_stock = filtered_data[filtered_data['Stock'] > 0]
-            st.dataframe(con_stock, width=1000)
-
-        if selected == 'Sin Stock':
-            sin_stock = filtered_data[filtered_data['Stock'] == 0]
-            st.dataframe(sin_stock, width=1000)
+            kardex['valor_ingreso'] = kardex['entra'] * kardex['precio']
             
-        if selected == 'Todo':
-            st.dataframe(filtered_data, width=1000)
-
-        if selected == 'Stock Valorizado':
-            total_stock_valorizado = filtered_data['Valor'].sum()
-            stock_valorizado = filtered_data[filtered_data['Stock'] > 0]
-            stock_valorizado = stock_valorizado.sort_values(by='Valor', ascending=False)
+            total_valor_ingreso_recurso = kardex.groupby('codRecurso')['valor_ingreso'].sum().reset_index()
+            total_valor_ingreso_recurso.columns = ['codRecurso', 'total_valor_ingreso_recurso']
+            total_cantidad_ingreso_recurso = kardex.groupby('codRecurso')['entra'].sum().reset_index()
+            total_cantidad_ingreso_recurso.columns = ['codRecurso', 'total_cantidad_ingreso_recurso']
+            total_cantidad_salidas_recurso = kardex.groupby('codRecurso')['sale'].sum().reset_index()
+            total_cantidad_salidas_recurso.columns = ['codRecurso', 'total_cantidad_salidas_recurso']
+            recurso = kardex.groupby('codRecurso')['recurso'].first().reset_index()
+            recurso.columns = ['codRecurso', 'recurso']
+            bodega = kardex.groupby('codRecurso')['bodega'].first().reset_index()
+            bodega.columns = ['codRecurso', 'bodega']
+            obra = kardex.groupby('codRecurso')['obra'].first().reset_index()
+            obra.columns = ['codRecurso', 'obra']
+            df_intermediate = pd.merge(total_valor_ingreso_recurso, total_cantidad_ingreso_recurso, on='codRecurso')
+            df_intermediate2= pd.merge(df_intermediate, recurso, on='codRecurso')
+            df_intermediate3 = pd.merge(df_intermediate2, bodega, on='codRecurso')
+            df_intermediate4 = pd.merge(df_intermediate3, obra, on='codRecurso')
+            precio_promedio_ponderado = pd.merge(df_intermediate4, total_cantidad_salidas_recurso, on='codRecurso')
             
-            col1, col2 = st.columns([4, 1])
+            precio_promedio_ponderado['PPP'] = precio_promedio_ponderado['total_valor_ingreso_recurso'] / precio_promedio_ponderado['total_cantidad_ingreso_recurso']
+            precio_promedio_ponderado['Stock'] = precio_promedio_ponderado['total_cantidad_ingreso_recurso'] - precio_promedio_ponderado['total_cantidad_salidas_recurso']
+            precio_promedio_ponderado['Valor'] = precio_promedio_ponderado['PPP'] * precio_promedio_ponderado['Stock']
+            
+            precio_promedio_ponderado['PPP'].fillna(0, inplace=True)
+            precio_promedio_ponderado['PPP'] = precio_promedio_ponderado['PPP'].astype(int)
+            
+            precio_promedio_ponderado['Stock'] = precio_promedio_ponderado['Stock'].astype(int)
+            precio_promedio_ponderado['Valor'].fillna(0, inplace=True)
+            precio_promedio_ponderado['Valor'] = precio_promedio_ponderado['Valor'].astype(int)
+                    
+            kardex_ppp_df = precio_promedio_ponderado[['obra','bodega','recurso', 'total_cantidad_ingreso_recurso', 'total_cantidad_salidas_recurso', 'Stock', 'PPP', 'Valor']]
+            kardex_ppp = kardex_ppp_df.rename(columns={'obra': 'Obra', 'bodega': 'Bodega', 'recurso': 'Recurso', 'total_cantidad_ingreso_recurso': 'Ingresos', 'total_cantidad_salidas_recurso': 'Salidas'})        
+            kardex_ppp = kardex_ppp.sort_values(by='Obra', ascending=False)
+            kardex_df = pd.DataFrame(kardex_ppp)
+
             with col2:
-                st.metric(label='Stock Valorizado', value=f"{total_stock_valorizado:,.0f}")
-            st.dataframe(stock_valorizado, width=1000)
-
-
-
-
+                opciones_bodega = kardex_df['Bodega'].unique()
+                bodega_seleccionada = st.selectbox(label='Bodega', options= [''] + list(opciones_bodega))
+                filtered_kardex_bodega = kardex_df[kardex_df['Bodega'] == bodega_seleccionada] if bodega_seleccionada else kardex_df
+            with col3:
+                opciones_recurso = filtered_kardex_bodega['Recurso'].unique()
+                recurso_seleccionado = st.selectbox(label='Recurso', options= [''] + list(opciones_recurso))
+                filtered_kardex_recurso = filtered_kardex_bodega[filtered_kardex_bodega['Recurso'] == recurso_seleccionado] if recurso_seleccionado else filtered_kardex_bodega
+                total_stock_valorizado = filtered_kardex_recurso['Valor'].sum()
+            st.markdown(
+                """
+                <style>
+                .custom-margin {
+                    margin-top: 80px;
+                }
+                </style>
+                """,
+                unsafe_allow_html=True
+            )
+            st.metric(label='Stock Valorizado', value=f"{total_stock_valorizado:,.0f}")
+            st.dataframe(filtered_kardex_recurso, width=1000)
+        
+        else:
+            st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
+            st.warning(f'No existe inventario en la obra {kardex3}')
 
     if selected == 'Maquinaria':
         st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
