@@ -8,7 +8,7 @@ def response_kardex(p1,p2,par3,kardex4,kardex5,kardex6):
         'func':'DBQUERYKARDEXOBRA',
         'p1':p1,
         'p2':p2,
-        'p3':par3,
+        'p3':kardex3,
         'p4':kardex4,
         'p5':kardex5,
         'p6':kardex6}
