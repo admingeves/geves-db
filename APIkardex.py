@@ -1,7 +1,7 @@
 import requests
 from requests.auth import HTTPBasicAuth
 
-def response_kardex(p1,p2,par3,kardex4,kardex5,kardex6):
+def response_kardex(p1,p2,kardex3,kardex4,kardex5,kardex6):
 #URL de la API y parámetros
     url = 'https://appauranet.com/APIAURANETB2B/api/Data/AuranetApiGEXP'
     parametros = {'key':'S3V5MEl4R1Fqd0NTVWJCL3JFWUpHcE9NM1YvZU1pUTBScVEyZng3VnRJeGtTN3ZMd3NWbXpnQTZBUWc0T21ZTg==',
