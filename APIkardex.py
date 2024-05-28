@@ -1,7 +1,7 @@
 import requests
 from requests.auth import HTTPBasicAuth
 
-def response_kardex(p1,p2,kardex3,kardex4,kardex5,kardex6):
+def response_kardex(p1,p2,kardex3):
 #URL de la API y parámetros
     url = 'https://appauranet.com/APIAURANETB2B/api/Data/AuranetApiGEXP'
     parametros = {'key':'S3V5MEl4R1Fqd0NTVWJCL3JFWUpHcE9NM1YvZU1pUTBScVEyZng3VnRJeGtTN3ZMd3NWbXpnQTZBUWc0T21ZTg==',
@@ -10,8 +10,8 @@ def response_kardex(p1,p2,kardex3,kardex4,kardex5,kardex6):
         'p2':p2,
         'p3':kardex3,
         'p4':'',
-        'p5':kardex5,
-        'p6':kardex6}
+        'p5':'01/01/2023',
+        'p6':'31/12/2024'}
 
     #Credenciales de autenticación
     username = 'zmTd5mveLhKn5qlY5BBxow=='
