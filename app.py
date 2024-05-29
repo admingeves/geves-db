@@ -2,11 +2,13 @@ import pandas as pd
 import streamlit as st
 import numpy as np
 import plotly.express as px
+import io
 from streamlit_option_menu import option_menu
 from APIbodega import response
 from APIconsumos import response_consumo
 from APIobras import response_obras
 from APIkardex import response_kardex
+from APIaxgastar import response_avance
 from datetime import datetime, timedelta
 
 
@@ -89,7 +91,7 @@ def main_interface():
         
 #MENU DEL SIDEBAR
         
-        selected = option_menu(menu_title=None, options=['Costos', 'EPP', 'Kardex', 'Maquinaria'], icons=['coin', 'person-badge', 'receipt', 'truck-front'])
+        selected = option_menu(menu_title=None, options=['Costos', 'Avance', 'EPP', 'Kardex', 'Maquinaria'], icons=['coin', 'calendar4-range', 'person-badge', 'receipt', 'truck-front'])
 
         st.markdown(
             """
@@ -457,9 +459,6 @@ def main_interface():
         
         with col2:
             par4 = st.selectbox(label='Obra', options=[''] + list(filtro_obra), label_visibility='visible', placeholder='Obra')
-
-
-#LLAMADA APIconsumos
         
         APIconsumos = response_consumo(p1, p2, par3, par4)
         datos = APIconsumos.json()['datos']
@@ -473,8 +472,6 @@ def main_interface():
             filtered_data_consumos_con_transferencias = pd.DataFrame(filtered)
             filtered_data_consumos= filtered_data_consumos_con_transferencias[~filtered_data_consumos_con_transferencias['tipoDoc'].str.startswith('Transferencia Obra')]
  #-------------------------------------------COSTOS (FILTROS INICIO)------------------------------------------------------------------------------------------
-       
-#FILTROS APIconsumos
             st.markdown(
             """
             <style>
@@ -742,7 +739,41 @@ def main_interface():
                         partidas_dia_filtrado = tabla_partidas_dia[(tabla_partidas_dia['Mes'] >= mes_inicio) & (tabla_partidas_dia['Mes'] <= mes_fin)]
                         pivot_partidas_dia_filtrado = partidas_dia_filtrado.pivot_table(index = ['Partida'], columns = 'Fecha', values = 'Total Costo', aggfunc='sum', margins=True, margins_name='Total Costo').fillna(0).astype(int)
                         pivot_formato_partidas_dia_filtrado = pivot_partidas_dia_filtrado.applymap(lambda x: f'{x:,}')
-                        st.dataframe(pivot_formato_partidas_dia_filtrado, width = 1100)              
+                        st.dataframe(pivot_formato_partidas_dia_filtrado, width = 1100)  
+                        
+                        def to_excel(df):
+                            output = io.BytesIO()
+                            # Reemplazar comas en los valores del DataFrame
+                            df = df.replace({',': ''}, regex=True)
+                            writer = pd.ExcelWriter(output, engine='xlsxwriter')
+                            df.to_excel(writer, index=True, sheet_name='Sheet1')
+                            
+                            # Obtener el objeto workbook y worksheet
+                            workbook = writer.book
+                            worksheet = writer.sheets['Sheet1']
+                            
+                            # Ajustar automáticamente el ancho de las columnas
+                            for i, col in enumerate(df.columns):
+                                column_len = max(df[col].astype(str).map(len).max(), len(col)) + 2
+                                worksheet.set_column(i, i, column_len)
+                            
+                            # Ajustar automáticamente el ancho de la columna de índice
+                            index_column_len = max(df.index.astype(str).map(len).max(), len(df.index.name)) + 2
+                            worksheet.set_column(0, 0, index_column_len)
+                            
+                            writer.close()
+                            processed_data = output.getvalue()
+                            return processed_data
+
+                        # Botón para descargar el archivo Excel
+                        col1,col2 = st.columns([7,1])
+                        with col2:
+                            st.download_button(
+                                label='Descargar',
+                                data=to_excel(pivot_formato_partidas_dia_filtrado),
+                                file_name='descarga_costos.xlsx',
+                                mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                            )
 
             if selected == 'APU':
                 col1,col2 = st.columns([1,4])
@@ -778,6 +809,7 @@ def main_interface():
                         formatted_pivot_df_dia = pivot_df_dia.applymap(lambda x: f'{x:,}')
                             
                         st.dataframe(formatted_pivot_df_dia, width=1100)
+                        
 
         else:
                 st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
@@ -885,13 +917,89 @@ def main_interface():
             st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
             st.warning(f'No existe inventario en la obra {kardex3}')
 
+
+
+    if selected == 'Avance':
+
+        st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
+        #st.warning('Módulo no disponible')
+        APIobras = response_obras(p1, p2)
+        if APIobras is None:
+            st.error("Error: No se pudo obtener los datos de obras.")
+        else:
+            datos_obra = APIobras.json().get('datos', [])
+            columns_obra = ['codObra']
+            if datos_obra is not None:
+                filtered = [{column: entry[column] for column in columns_obra} for entry in datos_obra]
+            else:
+                filtered = []
+        filtered_data_obra = pd.DataFrame(filtered)
+        filtro_obra = filtered_data_obra['codObra'].unique()
+        
+        col1,col2,col3 = st.columns([1,1,1])
+        with col1:
+            avance3 = st.selectbox(label='Obra', options=[''] + list(filtro_obra), label_visibility='visible', placeholder='Obra')
+        avance4 = ''
+
+        APIaxgastar = response_avance(p1,p2,avance3,avance4)
+        datos = APIaxgastar.json()['datos']
+        selected_columns = ['avance', 'obra','fecha','factualiza','descripcion','area','nombreArea','partida','nombrePartida','codRecurso','recurso','unidad','cantOriginal','puOriginal','totalOriginal','cantTrabajo','puTrabajo','totalTrabajo','ejecArea','ejecPartida','ejectRecurso','ejecValor','gastoCant','gastoTotal','xGastarCant','xGastarPU','xGastarTotal','costoEsperado','diferencia']
+        #selected_columns = ['avance', 'obra','fecha','fDesde','factualiza','descripcion','area','nombreArea','partida','nombrePartida','codRecurso','recurso','unidad','cantOriginal','puOriginal','totalOriginal','cantTrabajo','puTrabajo','totalTrabajo','ejecArea','ejecPartida','ejectRecurso','ejecValor','gastoCant','gastoTotal','xGastarCant','xGastarPU','xGastarTotal','costoEsperado','diferencia']
+        filtered_avance = [{column: entry[column] for column in selected_columns} for entry in datos]         
+        if filtered_avance:
+            avance = pd.DataFrame(filtered_avance)
+            avance = avance.sort_values(by = 'avance', ascending = False)
+            opciones_avance = avance['avance'].unique()
+            
+            with col2:
+                avance_seleccionado = st.selectbox(label= 'Avance', options = opciones_avance)
+            ultimo_avance = avance[avance['avance'] == avance_seleccionado] if avance_seleccionado else avance
+            ultimo_avance['fecha'] = pd.to_datetime(ultimo_avance['fecha']).dt.date
+            ultimo_avance['factualiza'] = pd.to_datetime(ultimo_avance['factualiza']).dt.date
+        
+            with col3:
+                fecha = ultimo_avance['fecha'].iloc[0]
+                fecha_actualiza = ultimo_avance['factualiza'].iloc[0]
+                descripcion = ultimo_avance['descripcion'].iloc[0]
+            st.markdown(  
+                    """
+                    <style>
+                    .custom-margin {
+                        margin-top: 80px;
+                    }
+                    </style>
+                    """,
+                    unsafe_allow_html=True
+            )    
+            col1,col2,col3 = st.columns([1,1,1])
+            with col1:
+                st.text(f'Fecha: {fecha}')
+            with col2:
+                st.text(f'Fecha Actualización: {fecha_actualiza}')
+            with col3:
+                st.text(f'Descripción: {descripcion}')
+            
+            columnas_tabla = ['avance','area','nombreArea','partida','nombrePartida','codRecurso','recurso','unidad','cantOriginal','puOriginal','totalOriginal','cantTrabajo','puTrabajo','totalTrabajo','ejecArea','ejecPartida','ejectRecurso','ejecValor','gastoCant','gastoTotal','xGastarCant','xGastarPU','xGastarTotal','costoEsperado','diferencia']
+            ultimo_avance_tabla = ultimo_avance[columnas_tabla]
+            st.markdown(  
+                    """
+                    <style>
+                    .custom-margin {
+                        margin-top: 80px;
+                    }
+                    </style>
+                    """,
+                    unsafe_allow_html=True
+            )
+            st.dataframe(ultimo_avance_tabla)
+        else:
+            st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
+            st.warning(f'No existe avance por gastar en la obra {avance3}')    
+
     if selected == 'Maquinaria':
         st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
         st.warning('Módulo no disponible')
 
-
-
-       
 
 
 
