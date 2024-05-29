@@ -766,9 +766,9 @@ def main_interface():
                             return processed_data
 
                         # Botón para descargar el archivo Excel
-                        col1,col2 = st.columns([7,1])
-                        with col2:
-                            st.download_button(
+                        #col1,col2 = st.columns([7,1])
+                        #with col2:
+                        st.download_button(
                                 label='Descargar',
                                 data=to_excel(pivot_formato_partidas_dia_filtrado),
                                 file_name='descarga_costos.xlsx',
