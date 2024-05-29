@@ -3,4 +3,3 @@ streamlit_option_menu
 pandas
 requests
 plotly
-io
