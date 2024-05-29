@@ -76,45 +76,30 @@ def show_login_form():
                 else:
                     st.error("Usuario/Contraseña incorrecto")
 
-# FUNCION PARA CERRAR SESIÓN
 def logout():
     st.session_state.logged_in = False
     st.session_state.show_login = True
 
-#FUNCION INTERFAZ PRINCIPAL
 def main_interface():
-    # SIDEBAR
     with st.sidebar:
         st.image('assets/Incoprovil.png')
         if st.button("Cerrar Sesión"):
             logout()
         
 #MENU DEL SIDEBAR
-        
-        selected = option_menu(menu_title=None, options=['Costos', 'Avance', 'EPP', 'Kardex', 'Maquinaria'], icons=['coin', 'calendar4-range', 'person-badge', 'receipt', 'truck-front'])
 
-        st.markdown(
-            """
-            <style>
-            .stSelectbox {
-                margin-top: -20px;
-                margin-bottom: -20px;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True
+
+        selected = option_menu(
+            menu_title=None, 
+            options=['Costos', 'Avance', 'EPP', 'Kardex', 'Maquinaria'], 
+            icons=['coin', 'calendar4-range', 'person-badge', 'receipt', 'truck-front'],
+            default_index=0
         )
 
         p1 = st.selectbox(label='Cliente', options=['INCOPROV'], label_visibility='hidden', placeholder='Cliente')
         p2 = st.selectbox(label='Empresa', options=['INCOPROV', 'HGM'], label_visibility='hidden', placeholder='Empresa')
-        
-        
-        
-#CLICK BODEGA SIDEBAR
 
     if selected == 'EPP':
-        #st.title('EPP')
-               
         mes_inicio,mes_fin=st.select_slider(label='Rango Fecha Bodega', options=list(meses_dict.keys()), value=['Enero','Diciembre'], label_visibility='hidden' )
         fecha_inicio = meses_dict[mes_inicio]
         fecha_fin = meses_dict_fin[mes_fin]
@@ -122,59 +107,33 @@ def main_interface():
         p5=fecha_fin
     
 #-------------------------------------------BODEGA INICIO------------------------------------------------------------------------------------------
-#LLAMADA APIbodega.py
 
         APIbodega = response(p1, p2, p4, p5)
         data = APIbodega.json()['datos']
-        # Columnas que voy a llamar de 'datos'
         selected_columns = ['obra', 'recibe', 'nombreRecurso', 'undRecurso', 'cantidad', 'precio', 'subTotal', 'clase', 'nombreClase', 'fecha', 'mes']
-        # Armar un nuevo DF para mostrar las columnas seleccionadas
         filtered_data = [{column: entry[column] for column in selected_columns} for entry in data]
         filtered_df=pd.DataFrame(filtered_data)
-    
-#RESULTADO APIbodega.py (DATOS)
+
 
 #-------------------------------------------BODEGA (FILTROS INICIO)------------------------------------------------------------------------------------------
 
     #FILTRO DATOS API CLASE, OBRA, RECURSO y RECIBE
         filtered_clases_epp= filtered_df[filtered_df['clase'].str.startswith('0404')]
         filtered_data_clases = pd.DataFrame(filtered_clases_epp)
-        st.markdown(
-            """
-            <style>
-            .stSlider {
-                margin-top: 40px;
-                margin-bottom: -10px;
-            }
-            .stSelectbox {
-                margin-top: -10px;
-                margin-bottom: -10px;
-            }
-            .block-container {
-                padding-top: 20px;
-                padding-bottom: 0px;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True
-        )
     
         col1, col2, col3, col4 = st.columns([1, 1, 2, 2])
         with col1:
             nombre_clases_epp= filtered_data_clases['nombreClase'].unique()
             epp_seleccionado = st.selectbox(label='Clase EPP', options=[''] + list(nombre_clases_epp), placeholder='Clases EPP')
             filtered_data_clase = filtered_data_clases[filtered_data_clases['nombreClase'] == epp_seleccionado] if epp_seleccionado else filtered_data_clases
-    
         with col2:
             obra = (filtered_data_clase['obra'].unique())
             obra_seleccionada = st.selectbox(label='Obra', options=[''] + list(obra), placeholder='Obra')
             filtered_data_obra = filtered_data_clase[filtered_data_clase['obra'] == obra_seleccionada] if obra_seleccionada else filtered_data_clase
-    
         with col3:
             recursos = (filtered_data_obra['nombreRecurso'].unique())
             recurso_seleccionado = st.selectbox(label='Recurso', options=[''] + list(recursos), placeholder='Recursos')
-            filtered_data_recurso = filtered_data_obra[filtered_data_obra['nombreRecurso'] == recurso_seleccionado] if recurso_seleccionado else filtered_data_obra
-    
+            filtered_data_recurso = filtered_data_obra[filtered_data_obra['nombreRecurso'] == recurso_seleccionado] if recurso_seleccionado else filtered_data_obra    
         with col4:
             recibe = (filtered_data_recurso['recibe'].unique())
             trabajador_seleccionado = st.selectbox(label='Trabajador', options=[''] + list(recibe), placeholder='Nombre Trabajador')
@@ -193,7 +152,7 @@ def main_interface():
 
 
         if selected == 'Cantidad':
-            # TOTAL CANTIDAD
+            
             data_bodega = pd.DataFrame(filtered_data_trabajador)
             data_bodega['cantidad'] = pd.to_numeric(data_bodega['cantidad'])
             data_bodega['fecha'] = pd.to_datetime(data_bodega['fecha'], dayfirst=True).dt.date
@@ -448,18 +407,14 @@ def main_interface():
             
         filtered_data_obra = pd.DataFrame(filtered)
         
-        #st.title('Costos')
-        
+        st.markdown('<div style="margin-top: 0px;"></div>', unsafe_allow_html=True)
         col1, col2, col3, col4, col5, col6 = st.columns([1, 1, 1, 1, 1, 2])
-        
         with col1:
-            
             par3 = st.selectbox(label='Periodo', options=['2024', '2023'], label_visibility='visible')
             filtro_obra = filtered_data_obra['codObra'].unique()
-        
         with col2:
             par4 = st.selectbox(label='Obra', options=[''] + list(filtro_obra), label_visibility='visible', placeholder='Obra')
-        
+
         APIconsumos = response_consumo(p1, p2, par3, par4)
         datos = APIconsumos.json()['datos']
         columns = ['obra', 'cantidad', 'tipoCosto', 'codigoArea', 'nombrePartida', 'nombreRecurso', 'fecha', 'total', 'unidad', 'precio','mes', 'tipoDoc']
@@ -472,25 +427,6 @@ def main_interface():
             filtered_data_consumos_con_transferencias = pd.DataFrame(filtered)
             filtered_data_consumos= filtered_data_consumos_con_transferencias[~filtered_data_consumos_con_transferencias['tipoDoc'].str.startswith('Transferencia Obra')]
  #-------------------------------------------COSTOS (FILTROS INICIO)------------------------------------------------------------------------------------------
-            st.markdown(
-            """
-            <style>
-            .stSlider {
-                margin-top: -40px;
-                margin-bottom: -10px;
-            }
-            .stSelectbox {
-                margin-top: 40px;
-                margin-bottom: -10px;
-            }
-            .block-container {
-                padding-top: 20px;
-                padding-bottom: 0px;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True
-        )
 
             with col3:
                 t_costo=(filtered_data_consumos['tipoCosto'].unique())
@@ -545,7 +481,6 @@ def main_interface():
             suma_total_antes_ayer = df_antes_ayer['total'].sum() if not df_antes_ayer.empty else 0
             suma_total_hoy_menos3 = df_hoy_menos3['total'].sum() if not df_hoy_menos3.empty else 0
             suma_total_consumo_general= suma_data_consumo_mes['total'].sum()
-
             st.markdown("""
             <style>
             div[data-testid="metric-container"] {
@@ -596,7 +531,7 @@ def main_interface():
                         df_filtrado_total = df_flujo_total[(df_flujo_total['Mes'] >= mes_inicio) & (df_flujo_total['Mes'] <= mes_fin)]
                         formato_para_total= df_filtrado_total['Total'].sum()       
                         st.metric(label= 'Total Costo', value=f"{formato_para_total:,}")
-                
+                            
                 tabla_total = data_consumo[['obra', 'total', 'fecha', 'mes']]
                 tabla_total = tabla_total.rename(columns={'obra': 'Obra', 'total': 'Total', 'fecha':'Fecha', 'mes':'Mes'})
                 
@@ -675,16 +610,71 @@ def main_interface():
                         pivot_obras_filtrado = obras_filtrado.pivot_table(index = ['Obra'], columns = 'Mes', values = 'Total Costo', aggfunc='sum', margins=True, margins_name='Total Costo').fillna(0).astype(int)
                         pivot_formato_obras_filtrado = pivot_obras_filtrado.applymap(lambda x: f'{x:,}')
                         st.dataframe(pivot_formato_obras_filtrado, width = 1100)
+                        def to_excel(df):
+                            output = io.BytesIO()
+                            # Reemplazar comas en los valores del DataFrame
+                            df = df.replace({',': ''}, regex=True)
+                            writer = pd.ExcelWriter(output, engine='xlsxwriter')
+                            df.to_excel(writer, index=True, sheet_name='Sheet1')
+                            
+                            workbook = writer.book
+                            worksheet = writer.sheets['Sheet1']
+                            
+                            index_column_len = max(df.index.astype(str).map(len).max(), len(df.index.name)) + 2
+                            worksheet.set_column(0, 0, index_column_len)
+                            
+                            writer.close()
+                            processed_data = output.getvalue()
+                            return processed_data
+
+                        col1,col2 = st.columns([7,1])
+                        with col2:
+                            st.download_button(
+                                label='Descargar',
+                                data=to_excel(pivot_formato_obras_filtrado),
+                                file_name='obras_mensual.xlsx',
+                                mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                            )
+
                     if selected == 'Diario':
                         tabla_obras_dia = data_consumo[['obra', 'mes' ,'fecha', 'total']]
                         tabla_obras_dia = tabla_obras_dia.rename(columns = {'obra':'Obra', 'fecha':'Fecha', 'total':'Total Costo', 'mes':'Mes'})
                         tabla_obras_dia['Total Costo'] = pd.to_numeric(tabla_obras_dia['Total Costo'])
+                        tabla_obras_dia['Fecha'] = pd.to_datetime(tabla_obras_dia['Fecha'], dayfirst=True).dt.date
                         mes_inicio= pd.to_numeric(mes_inicio)
                         mes_fin= pd.to_numeric(mes_fin)
                         obras_dia_filtrado = tabla_obras_dia[(tabla_obras_dia['Mes'] >= mes_inicio) & (tabla_obras_dia['Mes'] <= mes_fin)]
                         pivot_obras_dia_filtrado = obras_dia_filtrado.pivot_table(index = ['Obra'], columns = 'Fecha', values = 'Total Costo', aggfunc='sum', margins=True, margins_name='Total Costo').fillna(0).astype(int)
                         pivot_formato_obras_dia_filtrado = pivot_obras_dia_filtrado.applymap(lambda x: f'{x:,}')
                         st.dataframe(pivot_formato_obras_dia_filtrado, width = 1100)
+                        def to_excel(df):
+                            output = io.BytesIO()
+                            df = df.replace({',': ''}, regex=True)
+                            writer = pd.ExcelWriter(output, engine='xlsxwriter')
+                            df.to_excel(writer, index=True, sheet_name='Sheet1')
+                            
+                            # Obtener el objeto workbook y worksheet
+                            workbook = writer.book
+                            worksheet = writer.sheets['Sheet1']
+                            
+                            # Ajustar automáticamente el ancho de la columna de índice
+                            index_column_len = max(df.index.astype(str).map(len).max(), len(df.index.name)) + 2
+                            worksheet.set_column(0, 0, index_column_len)
+                            
+                            writer.close()
+                            processed_data = output.getvalue()
+                            return processed_data
+
+                        # Botón para descargar el archivo Excel
+                        col1,col2 = st.columns([7,1])
+                        with col2:
+                            st.download_button(
+                                label='Descargar',
+                                data=to_excel(pivot_formato_obras_dia_filtrado),
+                                file_name='obra_diario.xlsx',
+                                mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                            )
+
 
             if selected == 'Áreas':
                 col1,col2 = st.columns([1,4])
@@ -702,17 +692,74 @@ def main_interface():
                         pivot_areas_filtrado = areas_filtrado.pivot_table(index = ['Área'], columns = 'Mes', values = 'Total Costo', aggfunc='sum', margins=True, margins_name='Total Costo').fillna(0).astype(int)
                         pivot_formato_areas_filtrado = pivot_areas_filtrado.applymap(lambda x: f'{x:,}')
                         st.dataframe(pivot_formato_areas_filtrado, width = 1100)
+                        def to_excel(df):
+                            output = io.BytesIO()
+                            # Reemplazar comas en los valores del DataFrame
+                            df = df.replace({',': ''}, regex=True)
+                            writer = pd.ExcelWriter(output, engine='xlsxwriter')
+                            df.to_excel(writer, index=True, sheet_name='Sheet1')
+                            
+                            # Obtener el objeto workbook y worksheet
+                            workbook = writer.book
+                            worksheet = writer.sheets['Sheet1']
+                            
+                            # Ajustar automáticamente el ancho de la columna de índice
+                            index_column_len = max(df.index.astype(str).map(len).max(), len(df.index.name)) + 2
+                            worksheet.set_column(0, 0, index_column_len)
+                            
+                            writer.close()
+                            processed_data = output.getvalue()
+                            return processed_data
+
+                        # Botón para descargar el archivo Excel
+                        col1,col2 = st.columns([7,1])
+                        with col2:
+                            st.download_button(
+                                label='Descargar',
+                                data=to_excel(pivot_formato_areas_filtrado),
+                                file_name='areas_mensual.xlsx',
+                                mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                            )
+
                     if selected == 'Diario':
                         tabla_areas_dia = data_consumo[['codigoArea', 'mes' ,'fecha', 'total']]
                         tabla_areas_dia = tabla_areas_dia.rename(columns = {'codigoArea':'Área', 'fecha':'Fecha', 'total':'Total Costo', 'mes':'Mes'})
                         tabla_areas_dia['Total Costo'] = pd.to_numeric(tabla_areas_dia['Total Costo'])
+                        tabla_areas_dia['Fecha'] = pd.to_datetime(tabla_areas_dia['Fecha'], dayfirst=True).dt.date
                         mes_inicio= pd.to_numeric(mes_inicio)
                         mes_fin= pd.to_numeric(mes_fin)
                         areas_dia_filtrado = tabla_areas_dia[(tabla_areas_dia['Mes'] >= mes_inicio) & (tabla_areas_dia['Mes'] <= mes_fin)]
                         pivot_areas_dia_filtrado = areas_dia_filtrado.pivot_table(index = ['Área'], columns = 'Fecha', values = 'Total Costo', aggfunc='sum', margins=True, margins_name='Total Costo').fillna(0).astype(int)
                         pivot_formato_areas_dia_filtrado = pivot_areas_dia_filtrado.applymap(lambda x: f'{x:,}')
                         st.dataframe(pivot_formato_areas_dia_filtrado, width = 1100)
+                        def to_excel(df):
+                            output = io.BytesIO()
+                            # Reemplazar comas en los valores del DataFrame
+                            df = df.replace({',': ''}, regex=True)
+                            writer = pd.ExcelWriter(output, engine='xlsxwriter')
+                            df.to_excel(writer, index=True, sheet_name='Sheet1')
+                            
+                            # Obtener el objeto workbook y worksheet
+                            workbook = writer.book
+                            worksheet = writer.sheets['Sheet1']
 
+                            # Ajustar automáticamente el ancho de la columna de índice
+                            index_column_len = max(df.index.astype(str).map(len).max(), len(df.index.name)) + 2
+                            worksheet.set_column(0, 0, index_column_len)
+                            
+                            writer.close()
+                            processed_data = output.getvalue()
+                            return processed_data
+
+                        # Botón para descargar el archivo Excel
+                        col1,col2 = st.columns([7,1])
+                        with col2:
+                            st.download_button(
+                                label='Descargar',
+                                data=to_excel(pivot_formato_areas_dia_filtrado),
+                                file_name='areas_diario.xlsx',
+                                mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                            )
 
             if selected == 'Partidas':
                 col1,col2 = st.columns([1,4])
@@ -730,10 +777,40 @@ def main_interface():
                         pivot_partidas_filtrado = partidas_filtrado.pivot_table(index = ['Partida'], columns = 'Mes', values = 'Total Costo', aggfunc='sum', margins=True, margins_name='Total Costo').fillna(0).astype(int)
                         pivot_formato_partidas_filtrado = pivot_partidas_filtrado.applymap(lambda x: f'{x:,}')
                         st.dataframe(pivot_formato_partidas_filtrado, width = 1100)
+                        def to_excel(df):
+                            output = io.BytesIO()
+                            # Reemplazar comas en los valores del DataFrame
+                            df = df.replace({',': ''}, regex=True)
+                            writer = pd.ExcelWriter(output, engine='xlsxwriter')
+                            df.to_excel(writer, index=True, sheet_name='Sheet1')
+                            
+                            # Obtener el objeto workbook y worksheet
+                            workbook = writer.book
+                            worksheet = writer.sheets['Sheet1']
+                            
+                            # Ajustar automáticamente el ancho de la columna de índice
+                            index_column_len = max(df.index.astype(str).map(len).max(), len(df.index.name)) + 2
+                            worksheet.set_column(0, 0, index_column_len)
+                            
+                            writer.close()
+                            processed_data = output.getvalue()
+                            return processed_data
+
+                        # Botón para descargar el archivo Excel
+                        col1,col2 = st.columns([7,1])
+                        with col2:
+                            st.download_button(
+                                label='Descargar',
+                                data=to_excel(pivot_formato_partidas_filtrado),
+                                file_name='partidas_mensual.xlsx',
+                                mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                            )
+
                     if selected == 'Diario':
                         tabla_partidas_dia = data_consumo[['nombrePartida', 'mes' ,'fecha', 'total']]
                         tabla_partidas_dia = tabla_partidas_dia.rename(columns = {'nombrePartida':'Partida', 'fecha':'Fecha', 'total':'Total Costo', 'mes':'Mes'})
                         tabla_partidas_dia['Total Costo'] = pd.to_numeric(tabla_partidas_dia['Total Costo'])
+                        tabla_partidas_dia['Fecha'] = pd.to_datetime(tabla_partidas_dia['Fecha'], dayfirst=True).dt.date
                         mes_inicio= pd.to_numeric(mes_inicio)
                         mes_fin= pd.to_numeric(mes_fin)
                         partidas_dia_filtrado = tabla_partidas_dia[(tabla_partidas_dia['Mes'] >= mes_inicio) & (tabla_partidas_dia['Mes'] <= mes_fin)]
@@ -751,12 +828,7 @@ def main_interface():
                             # Obtener el objeto workbook y worksheet
                             workbook = writer.book
                             worksheet = writer.sheets['Sheet1']
-                            
-                            # Ajustar automáticamente el ancho de las columnas
-                            for i, col in enumerate(df.columns):
-                                column_len = max(df[col].astype(str).map(len).max(), len(col)) + 2
-                                worksheet.set_column(i, i, column_len)
-                            
+
                             # Ajustar automáticamente el ancho de la columna de índice
                             index_column_len = max(df.index.astype(str).map(len).max(), len(df.index.name)) + 2
                             worksheet.set_column(0, 0, index_column_len)
@@ -771,7 +843,7 @@ def main_interface():
                             st.download_button(
                                 label='Descargar',
                                 data=to_excel(pivot_formato_partidas_dia_filtrado),
-                                file_name='descarga_costos.xlsx',
+                                file_name='partidas_diario.xlsx',
                                 mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
                             )
 
@@ -900,16 +972,7 @@ def main_interface():
                 recurso_seleccionado = st.selectbox(label='Recurso', options= [''] + list(opciones_recurso))
                 filtered_kardex_recurso = filtered_kardex_bodega[filtered_kardex_bodega['Recurso'] == recurso_seleccionado] if recurso_seleccionado else filtered_kardex_bodega
                 total_stock_valorizado = filtered_kardex_recurso['Valor'].sum()
-            st.markdown(
-                """
-                <style>
-                .custom-margin {
-                    margin-top: 80px;
-                }
-                </style>
-                """,
-                unsafe_allow_html=True
-            )
+            st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
             st.metric(label='Stock Valorizado', value=f"{total_stock_valorizado:,.0f}")
             st.dataframe(filtered_kardex_recurso, width=1000)
         
@@ -920,9 +983,7 @@ def main_interface():
 
 
     if selected == 'Avance':
-
         st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
-        #st.warning('Módulo no disponible')
         APIobras = response_obras(p1, p2)
         if APIobras is None:
             st.error("Error: No se pudo obtener los datos de obras.")
@@ -935,7 +996,7 @@ def main_interface():
                 filtered = []
         filtered_data_obra = pd.DataFrame(filtered)
         filtro_obra = filtered_data_obra['codObra'].unique()
-        
+        st.markdown('<div style="margin-top: 0px;"></div>', unsafe_allow_html=True)
         col1,col2,col3 = st.columns([1,1,1])
         with col1:
             avance3 = st.selectbox(label='Obra', options=[''] + list(filtro_obra), label_visibility='visible', placeholder='Obra')
@@ -961,16 +1022,7 @@ def main_interface():
                 fecha = ultimo_avance['fecha'].iloc[0]
                 fecha_actualiza = ultimo_avance['factualiza'].iloc[0]
                 descripcion = ultimo_avance['descripcion'].iloc[0]
-            st.markdown(  
-                    """
-                    <style>
-                    .custom-margin {
-                        margin-top: 80px;
-                    }
-                    </style>
-                    """,
-                    unsafe_allow_html=True
-            )    
+            st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
             col1,col2,col3 = st.columns([1,1,1])
             with col1:
                 st.text(f'Fecha: {fecha}')
@@ -981,16 +1033,7 @@ def main_interface():
             
             columnas_tabla = ['avance','area','nombreArea','partida','nombrePartida','codRecurso','recurso','unidad','cantOriginal','puOriginal','totalOriginal','cantTrabajo','puTrabajo','totalTrabajo','ejecArea','ejecPartida','ejectRecurso','ejecValor','gastoCant','gastoTotal','xGastarCant','xGastarPU','xGastarTotal','costoEsperado','diferencia']
             ultimo_avance_tabla = ultimo_avance[columnas_tabla]
-            st.markdown(  
-                    """
-                    <style>
-                    .custom-margin {
-                        margin-top: 80px;
-                    }
-                    </style>
-                    """,
-                    unsafe_allow_html=True
-            )
+            st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
             st.dataframe(ultimo_avance_tabla)
         else:
             st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
