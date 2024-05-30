@@ -997,7 +997,7 @@ def main_interface():
         filtered_data_obra = pd.DataFrame(filtered)
         filtro_obra = filtered_data_obra['codObra'].unique()
         st.markdown('<div style="margin-top: 0px;"></div>', unsafe_allow_html=True)
-        col1,col2,col3 = st.columns([1,1,1])
+        col1,col2,col3,col4,col5 = st.columns([1,1,1,2,2])
         with col1:
             avance3 = st.selectbox(label='Obra', options=[''] + list(filtro_obra), label_visibility='visible', placeholder='Obra')
         avance4 = ''
@@ -1010,11 +1010,24 @@ def main_interface():
         if filtered_avance:
             avance = pd.DataFrame(filtered_avance)
             avance = avance.sort_values(by = 'avance', ascending = False)
-            opciones_avance = avance['avance'].unique()
             
             with col2:
+                opciones_avance = avance['avance'].unique()
                 avance_seleccionado = st.selectbox(label= 'Avance', options = opciones_avance)
-            ultimo_avance = avance[avance['avance'] == avance_seleccionado] if avance_seleccionado else avance
+                ultimo_avance = avance[avance['avance'] == avance_seleccionado] if avance_seleccionado else avance
+            with col3:
+                opciones_area = avance['area'].unique()
+                area_seleccionada = st.selectbox(label = 'Área', options = [''] + list(opciones_area))
+                ultimo_avance_area = ultimo_avance[ultimo_avance['area'] == area_seleccionada] if area_seleccionada else ultimo_avance
+            with col4:
+                opciones_partida = ultimo_avance_area['nombrePartida'].unique()
+                partida_seleccionada = st.selectbox(label = 'Partidas', options = [''] + list(opciones_partida))
+                ultimo_avance_partida = ultimo_avance_area[ultimo_avance_area['nombrePartida'] == partida_seleccionada] if partida_seleccionada else ultimo_avance_area
+            with col5:    
+                opciones_recurso = ultimo_avance_partida['recurso'].unique()
+                recurso_seleccionado = st.selectbox(label = 'Recurso', options = [''] + list(opciones_recurso))
+                ultimo_avance_recurso = ultimo_avance_partida[ultimo_avance_partida['recurso'] == recurso_seleccionado] if recurso_seleccionado else ultimo_avance_partida
+                
             ultimo_avance['fecha'] = pd.to_datetime(ultimo_avance['fecha']).dt.date
             ultimo_avance['factualiza'] = pd.to_datetime(ultimo_avance['factualiza']).dt.date
         
@@ -1022,6 +1035,40 @@ def main_interface():
                 fecha = ultimo_avance['fecha'].iloc[0]
                 fecha_actualiza = ultimo_avance['factualiza'].iloc[0]
                 descripcion = ultimo_avance['descripcion'].iloc[0]
+            
+            
+            columnas_tabla = ['avance','area','nombreArea','partida','nombrePartida','codRecurso','recurso','unidad','cantOriginal','puOriginal','totalOriginal','cantTrabajo','puTrabajo','totalTrabajo','ejecArea','ejecPartida','ejectRecurso','ejecValor','gastoCant','gastoTotal','xGastarCant','xGastarPU','xGastarTotal','costoEsperado','diferencia']
+            ultimo_avance_tabla = ultimo_avance_recurso[columnas_tabla]
+            
+
+            total_original = ultimo_avance_tabla['totalOriginal'].sum()
+            total_trabajo = ultimo_avance_tabla['totalTrabajo'].sum()
+            total_avance = ultimo_avance_tabla['ejecValor'].sum()
+            total_costo = ultimo_avance_tabla['gastoTotal'].sum()
+            total_por_gastar = ultimo_avance_tabla['xGastarTotal'].sum()
+            total_esperado = ultimo_avance_tabla['costoEsperado'].sum()
+            total_proyeccion = ultimo_avance_tabla['diferencia'].sum()
+            total_avance_costo = total_avance - total_costo
+
+            totales_suma = pd.DataFrame({
+                'Tipo': ['P. Original', 'P. Trabajo', 'Avance', 'Costo', 'Avance-Costo','Por Gastar', 'Esperado', 'Proyección'],
+                'Monto': [total_original, total_trabajo, total_avance, total_costo, total_avance_costo, total_por_gastar, total_esperado, total_proyeccion]
+            })
+
+            fig = px.bar(totales_suma, x='Tipo', y='Monto', title=f'Control Presupuestario {avance3}', text='Monto')
+            fig.update_layout(
+                height=400,  # Ajustar la altura de la gráfica
+                margin=dict(l=0, r=0, t=60, b=0),  # Ajustar los márgenes
+                xaxis_title='',  # Título del eje x
+                yaxis_title='',  # Título del eje y
+                showlegend=False,  # No mostrar la leyenda
+                yaxis=dict(showgrid=False)
+            )
+            fig.update_traces(texttemplate='%{text:.2s}', textposition='outside')
+            colors = ['red' if monto < 0 else 'blue' for monto in totales_suma['Monto']]
+            fig.update_traces(marker_color=colors)
+
+            selected = option_menu(menu_title=None, options=['Dashboard', 'Resumen', 'Área-Partida', 'Data'], icons=['', '', ''], orientation='horizontal')
             st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
             col1,col2,col3 = st.columns([1,1,1])
             with col1:
@@ -1030,14 +1077,41 @@ def main_interface():
                 st.text(f'Fecha Actualización: {fecha_actualiza}')
             with col3:
                 st.text(f'Descripción: {descripcion}')
-            
-            columnas_tabla = ['avance','area','nombreArea','partida','nombrePartida','codRecurso','recurso','unidad','cantOriginal','puOriginal','totalOriginal','cantTrabajo','puTrabajo','totalTrabajo','ejecArea','ejecPartida','ejectRecurso','ejecValor','gastoCant','gastoTotal','xGastarCant','xGastarPU','xGastarTotal','costoEsperado','diferencia']
-            ultimo_avance_tabla = ultimo_avance[columnas_tabla]
-            st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
-            st.dataframe(ultimo_avance_tabla)
+
+            if selected == 'Dashboard':
+                st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
+                st.plotly_chart(fig, use_container_width=True)
+
+            if selected == 'Data':
+                st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
+                st.dataframe(ultimo_avance_tabla)
+
+            if selected == 'Resumen':
+                st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
+                columnas_tabla = ['area','nombrePartida','recurso','unidad','totalOriginal','totalTrabajo','ejecValor','gastoTotal','xGastarTotal','costoEsperado','diferencia']
+                ultimo_avance_resumen = ultimo_avance_recurso[columnas_tabla]
+                pivot_resumen = ultimo_avance_resumen.pivot_table(index=['area', 'nombrePartida', 'recurso', 'unidad'], values=['totalOriginal', 'totalTrabajo','ejecValor','gastoTotal','xGastarTotal','costoEsperado','diferencia'], aggfunc='sum', margins=True, margins_name='Total').fillna(0).astype(int)
+                ordered_columns = ['totalOriginal', 'totalTrabajo', 'ejecValor', 'gastoTotal', 'xGastarTotal', 'costoEsperado', 'diferencia']
+                pivot_resumen = pivot_resumen[ordered_columns]
+                formatted_pivot_resumen = pivot_resumen.applymap(lambda x: f'{x:,}')
+                st.dataframe(formatted_pivot_resumen, width=1100)
+
+            if selected == 'Área-Partida':
+                st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
+                ultimo_avance_resumen = ultimo_avance_recurso[columnas_tabla]
+                pivot_resumen = ultimo_avance_resumen.pivot_table(index=['area', 'nombrePartida'], values=['ejecValor','gastoTotal'], aggfunc='sum', margins=True, margins_name='Total').fillna(0).astype(int)
+                ordered_columns = ['ejecValor', 'gastoTotal']
+                pivot_area_partida = pivot_resumen[ordered_columns]
+                formatted_pivot_area_partida = pivot_area_partida.applymap(lambda x: f'{x:,}')
+                st.dataframe(formatted_pivot_area_partida, width=1100)
+
         else:
             st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
-            st.warning(f'No existe avance por gastar en la obra {avance3}')    
+            st.warning(f'No existe avance por gastar en la obra {avance3}')
+
+
+
+
 
     if selected == 'Maquinaria':
         st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
