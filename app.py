@@ -1088,20 +1088,52 @@ def main_interface():
 
             if selected == 'Resumen':
                 st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
-                columnas_tabla = ['area','nombrePartida','recurso','unidad','totalOriginal','totalTrabajo','ejecValor','gastoTotal','xGastarTotal','costoEsperado','diferencia']
+                columnas_tabla = ['area','nombrePartida','recurso','unidad','totalOriginal','totalTrabajo','ejecValor','gastoTotal','xGastarTotal','costoEsperado','diferencia' ]
                 ultimo_avance_resumen = ultimo_avance_recurso[columnas_tabla]
-                pivot_resumen = ultimo_avance_resumen.pivot_table(index=['area', 'nombrePartida', 'recurso', 'unidad'], values=['totalOriginal', 'totalTrabajo','ejecValor','gastoTotal','xGastarTotal','costoEsperado','diferencia'], aggfunc='sum', margins=True, margins_name='Total').fillna(0).astype(int)
-                ordered_columns = ['totalOriginal', 'totalTrabajo', 'ejecValor', 'gastoTotal', 'xGastarTotal', 'costoEsperado', 'diferencia']
+                ultimo_avance_resumen['avance_costo'] = ultimo_avance_resumen['ejecValor'] - ultimo_avance_resumen['gastoTotal']
+                pivot_resumen = ultimo_avance_resumen.pivot_table(index=['area', 'nombrePartida', 'recurso', 'unidad'], values=['totalOriginal', 'totalTrabajo','ejecValor','gastoTotal', 'avance_costo', 'xGastarTotal','costoEsperado','diferencia'], aggfunc='sum', margins=True, margins_name='Total').fillna(0).astype(int)
+                ordered_columns = ['totalOriginal', 'totalTrabajo', 'ejecValor', 'gastoTotal','avance_costo', 'xGastarTotal', 'costoEsperado', 'diferencia']
                 pivot_resumen = pivot_resumen[ordered_columns]
+                column_renames = {
+                    'area':'Área',
+                    'totalOriginal': 'P.Original',
+                    'totalTrabajo': 'P. Trabajo',
+                    'ejecValor': 'Avance',
+                    'gastoTotal': 'Costo',
+                    'avance_costo': 'Avance-Costo',
+                    'xGastarTotal': 'Por Gastar',
+                    'costoEsperado': 'Esperado',
+                    'diferencia': 'Diferencia'
+                }
+                pivot_resumen = pivot_resumen.rename(columns=column_renames)
+                index_renames = {
+                    'area': 'Área',
+                    'nombrePartida': 'Partida',
+                    'recurso': 'Recurso',
+                    'unidad': 'Unidad'
+                }
+                pivot_resumen = pivot_resumen.rename_axis(index=index_renames)
                 formatted_pivot_resumen = pivot_resumen.applymap(lambda x: f'{x:,}')
                 st.dataframe(formatted_pivot_resumen, width=1100)
 
             if selected == 'Área-Partida':
                 st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
                 ultimo_avance_resumen = ultimo_avance_recurso[columnas_tabla]
-                pivot_resumen = ultimo_avance_resumen.pivot_table(index=['area', 'nombrePartida'], values=['ejecValor','gastoTotal'], aggfunc='sum', margins=True, margins_name='Total').fillna(0).astype(int)
-                ordered_columns = ['ejecValor', 'gastoTotal']
+                ultimo_avance_resumen['avance_costo'] = ultimo_avance_resumen['ejecValor'] - ultimo_avance_resumen['gastoTotal']
+                pivot_resumen = ultimo_avance_resumen.pivot_table(index=['area', 'nombrePartida'], values=['ejecValor','gastoTotal', 'avance_costo'], aggfunc='sum', margins=True, margins_name='Total').fillna(0).astype(int)
+                ordered_columns = ['ejecValor', 'gastoTotal', 'avance_costo']
                 pivot_area_partida = pivot_resumen[ordered_columns]
+                column_renames = {
+                    'ejecValor': 'Avance',
+                    'gastoTotal': 'Costo',
+                    'avance_costo': 'Avance-Costo'
+                }
+                pivot_area_partida = pivot_area_partida.rename(columns=column_renames)
+                index_renames = {
+                    'area': 'Área',
+                    'nombrePartida': 'Partida'
+                }
+                pivot_area_partida = pivot_area_partida.rename_axis(index=index_renames)
                 formatted_pivot_area_partida = pivot_area_partida.applymap(lambda x: f'{x:,}')
                 st.dataframe(formatted_pivot_area_partida, width=1100)
 
