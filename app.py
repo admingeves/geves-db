@@ -11,9 +11,21 @@ from APIkardex import response_kardex
 from APIaxgastar import response_avance
 from datetime import datetime, timedelta
 
+st.set_page_config(page_icon='📊', layout='wide', page_title='Dashboard')
 
+def registrar_usuario(username, password):
+    df = pd.DataFrame({'username': [username], 'password': [password]})
+    df.to_csv('usuarios.csv', index=False, mode='a', header=not os.path.exists('usuarios.csv'))
 
-# DICCIONARIO p4 (FECHA INICIO)
+# Función para verificar las credenciales de inicio de sesión
+def verificar_credenciales(username, password):
+    usuarios = pd.read_csv('usuarios.csv')
+    if ((usuarios['username'] == username) & (usuarios['password'] == password)).any():
+        return True
+    else:
+        return False
+
+# Diccionarios para manejar fechas y configuración de página
 meses_dict = {
     'Enero': '2024/01/01',
     'Febrero': '2024/01/02',
@@ -28,7 +40,7 @@ meses_dict = {
     'Noviembre': '2024/01/11',
     'Diciembre': '2024/01/12'
 }
-# DICCIONARIO p5 (FECHA FIN)
+
 meses_dict_fin = {
     'Febrero': '2024/01/02',
     'Marzo': '2024/01/03',
@@ -42,7 +54,7 @@ meses_dict_fin = {
     'Noviembre': '2024/01/11',
     'Diciembre': '2024/01/12'
 }
-# DICCIONARIO (FECHA CONSUMO)
+
 mese_dict_consumo = {
     'Enero': '1',
     'Febrero': '2',
@@ -58,8 +70,19 @@ mese_dict_consumo = {
     'Diciembre': '12'
 }
 
-#CONFIG PAGINA
-st.set_page_config(page_icon='📊', layout='wide', page_title='Dashboard')
+# Configurar la app de Streamlit
+def main():
+    
+    
+    # Inicializar el estado de la sesión si no está inicializado
+    if 'logged_in' not in st.session_state:
+        st.session_state.logged_in = False
+    
+    # Mostrar la página de inicio de sesión si no está autenticado
+    if not st.session_state.logged_in:
+        show_login_form()
+    else:
+        main_interface()
 
 def show_login_form():
     col1, col2, col3 = st.columns([1, 1, 1])
@@ -70,24 +93,17 @@ def show_login_form():
             password = st.text_input("Contraseña", type="password", key='password', label_visibility='hidden', placeholder='Contraseña')
             submit_button = st.form_submit_button(label='Iniciar Sesión')
             if submit_button:
-                if username == "invitado" and password == "1234":
+                if verificar_credenciales(username, password):
+                    st.success(f'Bienvenido, {username}!')
                     st.session_state.logged_in = True
-                    st.session_state.show_login = False
                 else:
                     st.error("Usuario/Contraseña incorrecto")
-
-def logout():
-    st.session_state.logged_in = False
-    st.session_state.show_login = True
 
 def main_interface():
     with st.sidebar:
         st.image('assets/Incoprovil.png')
         if st.button("Cerrar Sesión"):
-            logout()
-        
-#MENU DEL SIDEBAR
-
+            st.session_state.logged_in = False
 
         selected = option_menu(
             menu_title=None, 
@@ -429,21 +445,50 @@ def main_interface():
  #-------------------------------------------COSTOS (FILTROS INICIO)------------------------------------------------------------------------------------------
 
             with col3:
-                t_costo=(filtered_data_consumos['tipoCosto'].unique())
-                t_costo_seleccionado=st.selectbox(label='Tipo Costo', options=[''] + list(t_costo), placeholder='Tipo de Costos', label_visibility='visible' )
-                filtered_t_costo = filtered_data_consumos[filtered_data_consumos['tipoCosto'] == t_costo_seleccionado] if t_costo_seleccionado else filtered_data_consumos
+                t_costo = filtered_data_consumos['tipoCosto'].unique()
+                t_costo_seleccionado = st.multiselect(
+                label='Tipo Costo', 
+                options=t_costo, 
+                default=[], 
+                label_visibility='visible',
+                placeholder = 'Seleccionar'
+            )
+            filtered_t_costo = filtered_data_consumos[filtered_data_consumos['tipoCosto'].isin(t_costo_seleccionado)] if t_costo_seleccionado else filtered_data_consumos
+
             with col4:
-                area_consumo= (filtered_t_costo['codigoArea'].unique())
-                area_consumo_seleccionada=st.selectbox(label='Área', options=[''] + list(area_consumo), placeholder='Nombre Área', label_visibility='visible')
-                filtered_area_consumo = filtered_t_costo[filtered_t_costo['codigoArea'] == area_consumo_seleccionada] if area_consumo_seleccionada else filtered_t_costo
+                area_consumo = filtered_t_costo['codigoArea'].unique()
+                area_consumo_seleccionada = st.multiselect(
+                label='Área', 
+                options=area_consumo, 
+                default=[], 
+                label_visibility='visible',
+                placeholder = 'Seleccionar'
+                )
+                filtered_area_consumo = filtered_t_costo[filtered_t_costo['codigoArea'].isin(area_consumo_seleccionada)] if area_consumo_seleccionada else filtered_t_costo
+
             with col5:
-                partida_consumo= (filtered_area_consumo['nombrePartida'].unique())
-                partida_consumo_seleccionada=st.selectbox(label='Partida', options=[''] + list(partida_consumo), placeholder='Nombre Partida', label_visibility='visible')
-                filtered_partida_consumo = filtered_area_consumo[filtered_area_consumo['nombrePartida'] == partida_consumo_seleccionada] if partida_consumo_seleccionada else filtered_area_consumo
+                partida_consumo = filtered_area_consumo['nombrePartida'].unique()
+                partida_consumo_seleccionada = st.multiselect(
+                label='Partida', 
+                options=partida_consumo, 
+                default=[], 
+                label_visibility='visible',
+                placeholder = 'Seleccionar'
+                )
+                filtered_partida_consumo = filtered_area_consumo[filtered_area_consumo['nombrePartida'].isin(partida_consumo_seleccionada)] if partida_consumo_seleccionada else filtered_area_consumo
+
             with col6:
-                recurso_consumo= (filtered_partida_consumo['nombreRecurso'].unique())
-                recurso_consumo_seleccionada=st.selectbox(label='Recurso', options=[''] + list(recurso_consumo), placeholder='Nombre Recurso', label_visibility='visible')
-                filtered_recurso_consumo = filtered_partida_consumo[filtered_partida_consumo['nombreRecurso'] == recurso_consumo_seleccionada] if recurso_consumo_seleccionada else filtered_partida_consumo
+                recurso_consumo = filtered_partida_consumo['nombreRecurso'].unique()
+                recurso_consumo_seleccionada = st.multiselect(
+                label='Recurso', 
+                options=recurso_consumo, 
+                default=[], 
+                label_visibility='visible',
+                placeholder = 'Seleccionar'
+                )
+                filtered_recurso_consumo = filtered_partida_consumo[filtered_partida_consumo['nombreRecurso'].isin(recurso_consumo_seleccionada)] if recurso_consumo_seleccionada else filtered_partida_consumo
+                    
+            
                 
     #-------------------------------------------COSTOS (FILTROS FIN)------------------------------------------------------------------------------------------
     #-------------------------------------------COSTOS (SUBMENU INICIO)------------------------------------------------------------------------------------------
@@ -1166,8 +1211,7 @@ if "logged_in" not in st.session_state:
 
 if "show_login" not in st.session_state:
     st.session_state.show_login = False
-
-        # Comprobación del estado de la sesión y mostrar la interfaz correspondiente
+ # Comprobación del estado de la sesión y mostrar la interfaz correspondiente
 if st.session_state.logged_in:
             main_interface()
 else:
