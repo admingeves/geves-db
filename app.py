@@ -3,6 +3,7 @@ import streamlit as st
 import numpy as np
 import plotly.express as px
 import io
+from xlsxwriter import workbook
 from streamlit_option_menu import option_menu
 from APIbodega import response
 from APIconsumos import response_consumo
